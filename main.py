@@ -166,6 +166,11 @@ class App(QMainWindow):
         self.current_index = 0
 
         self.account = Account(acc_dir)
+
+        if len(self.account) == 0:
+            print('Nothing to do! Nice!')
+            exit(0)
+
         self.label_text.installEventFilter(self)
 
         self.need_save = False
