@@ -215,6 +215,18 @@ class App(QMainWindow):
         self.current_account_file.check_flags[self.current_index] = 0
         self.next_image()
 
+    def is_able_to_next(self, step):
+        if step >= len(self.current_account_file):
+            if self.acc_file_index == len(self.account) - 1:
+                return False
+        return True
+
+    def is_able_to_back(self, step):
+        if step < 0:
+            if self.acc_file_index == 0:
+                return False
+        return True
+
     def set_step(self, step):
         if step >= len(self.current_account_file):
             if self.acc_file_index == len(self.account) - 1:
@@ -233,6 +245,17 @@ class App(QMainWindow):
 
         self.current_index = step
         image, pred, label = self.current_account_file[step]
+        if image.size[0] * image.size[1] == 0:
+            print(f'Width or height is 0. WxH = {image.size[0]}x{image.size[1]}')
+            if self.is_able_to_next(step):
+                self.next_image()
+                return
+            elif self.is_able_to_back(step):
+                self.prev_image()
+                return
+            else:
+                print('Done!')
+                exit(0)
 
         self.current_line_index.setText(f'{self.current_index:05d}')
         self.current_acc_index_label.setText(f'{self.acc_file_index:05d}')
