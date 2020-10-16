@@ -271,7 +271,7 @@ class App(QMainWindow):
         self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
         self.imageLabel.setFixedSize(image_w, image_h)
         
-        self.adjustScrollBar(self.scrollArea.horizontalScrollBar(), factor)
+        self.adjustScrollBar(self.scrollArea.horizontalScrollBar(), 0)
         self.adjustScrollBar(self.scrollArea.verticalScrollBar(), 1.0)
 
         message = "{}, {}x{}, Depth: {}".format(self.current_account_file.image_path, self.image.width(), self.image.height(), self.image.depth())
@@ -283,11 +283,6 @@ class App(QMainWindow):
                                 + ((factor - 1) * scrollBar.pageStep()/2)))
 
     def save(self):
-
-        def __filter(obj):
-            flag, _ = obj
-            return flag == 0
-
         acc_file: AccountFile
         for acc_file in self.account:
             textline_incorrect = []
