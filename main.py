@@ -38,7 +38,9 @@ class Account():
         self.acc_jsons = [image.with_suffix('.json') for image in self.acc_images]
         self.accs = []
         for image_path, json_path in zip(self.acc_images, self.acc_jsons):
-            self.accs.append(AccountFile(image_path, json_path))
+            acc_file = AccountFile(image_path, json_path)
+            if len(acc_file) > 0:
+                self.accs.append(acc_file)
     
     def __getitem__(self, idx):
         return self.accs[idx]
