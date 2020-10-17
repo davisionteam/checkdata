@@ -230,14 +230,14 @@ class App(QMainWindow):
     def set_step(self, step):
         if step >= len(self.current_account_file):
             if self.acc_file_index == len(self.account) - 1:
-                self.acc_file_index = 0
+                return
             else:    
                 self.acc_file_index += 1
             self.current_account_file = self.account[self.acc_file_index]
             step = 0
         elif step < 0:
             if self.acc_file_index == 0:
-                self.acc_file_index = len(self.account) - 1
+                return
             else:    
                 self.acc_file_index -= 1
             self.current_account_file = self.account[self.acc_file_index]
