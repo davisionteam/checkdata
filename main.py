@@ -1,22 +1,28 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QLabel, QMainWindow, QVBoxLayout, QShortcut
-from PyQt5.QtGui import QPixmap, QFont, QFontMetrics
+import csv
+import glob
+import json
+import os
 import sys
 from pathlib import Path
+
+import cv2
+import numpy as np
+import pandas as pd
 from PIL import Image
 from PIL.ImageQt import ImageQt
-import os
-import json
-import glob
-import csv
-import pandas as pd
-from PyQt5.QtCore import Qt, qDebug, QSize, pyqtSignal, QEvent
-from PyQt5.QtGui import (QColor, QGuiApplication, QImage, QImageReader, QKeyEvent,
-                         QIntValidator, QImageWriter, QPainter, QPalette, QPixmap)
-from PyQt5.QtWidgets import (QApplication, QLabel, QLineEdit, QMainWindow,
-                             QMessageBox, QScrollArea, QScrollBar, QSizePolicy,
-                             QHBoxLayout, QVBoxLayout, QWidget)
+from PyQt5.QtCore import QEvent, QSize, Qt, pyqtSignal, qDebug
+from PyQt5.QtGui import (QColor, QFont, QFontMetrics, QGuiApplication, QImage,
+                         QImageReader, QImageWriter, QIntValidator, QKeyEvent,
+                         QPainter, QPalette, QPixmap)
+from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QLabel, QLineEdit,
+                             QMainWindow, QMessageBox, QPushButton,
+                             QScrollArea, QScrollBar, QShortcut, QSizePolicy,
+                             QVBoxLayout, QWidget)
 
 WIN_SIZE = (1024, 128)
+
+def distance(p1, p2):
+    return np.linalg.norm(np.array(p1) - np.array(p2))
 
 class SwitchSignal(QWidget):
 
@@ -62,9 +68,16 @@ class AccountFile():
         obj = self.textlines[idx]
         predict_text = obj['predict_text'].strip()
         labling_text = obj['labling_text'].strip()
-        coords = obj['coords'].strip()
-        x, y, w, h = [int(item) for item in coords.split()]
-        cur_tl_img = self.image.crop((x, y, x + w, y + h))
+        points = obj['coords']
+
+        cv_image = np.array(self.image)
+        width = int(round((distance(points[0], points[1]) + distance(points[2], points[3])) / 2))
+        height = int(round((distance(points[0], points[3]) + distance(points[1], points[2])) / 2))
+
+        M = cv2.getPerspectiveTransform(np.float32(points), np.float32([[0, 0], [width, 0], [width, height], [0, height]]))
+        image = cv2.warpPerspective(cv_image, M, (width, height))
+
+        cur_tl_img = Image.fromarray(image)
         return cur_tl_img, predict_text, labling_text
 
     def __len__(self):
