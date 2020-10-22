@@ -103,6 +103,7 @@ class App(QMainWindow):
         ##################
         index_widget = QWidget()
         index_layout = QHBoxLayout()
+        index_layout.setAlignment(Qt.AlignLeft)
 
         self.current_acc_index_label = QLineEdit(f'{0:05d}')
         self.current_acc_index_label.setValidator(QIntValidator())
@@ -121,6 +122,11 @@ class App(QMainWindow):
         self.total_line_label = QLabel('/0')
         index_layout.addWidget(self.current_line_index)
         index_layout.addWidget(self.total_line_label)
+
+        self.current_path_label = QLineEdit('path')
+        self.current_path_label.setFixedWidth(1000)
+        self.current_path_label.setReadOnly(True)
+        index_layout.addWidget(self.current_path_label)
 
         index_widget.setLayout(index_layout)
         layout.addWidget(index_widget)
@@ -317,6 +323,7 @@ class App(QMainWindow):
         self.adjustScrollBar(self.scrollArea.horizontalScrollBar(), 0)
         self.adjustScrollBar(self.scrollArea.verticalScrollBar(), 1.0)
 
+        self.current_path_label.setText(str(self.current_account_file.image_path))
         message = "{}, {}x{}, Depth: {}".format(self.current_account_file.image_path, self.image.width(), self.image.height(), self.image.depth())
         self.statusBar().showMessage(message)
         return True
