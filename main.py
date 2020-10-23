@@ -15,7 +15,7 @@ from PyQt5.QtGui import (QColor, QFont, QFontMetrics, QGuiApplication, QImage,
                          QImageReader, QImageWriter, QIntValidator, QKeyEvent,
                          QPainter, QPalette, QPixmap)
 from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QLabel, QLineEdit,
-                             QMainWindow, QMessageBox, QPushButton,
+                             QMainWindow, QMessageBox, QPushButton, QGroupBox,
                              QScrollArea, QScrollBar, QShortcut, QSizePolicy,
                              QVBoxLayout, QWidget)
 
@@ -131,6 +131,9 @@ class App(QMainWindow):
         index_widget.setLayout(index_layout)
         layout.addWidget(index_widget)
 
+        label = QLabel('Image:')
+        layout.addWidget(label)
+
         self.scrollArea = QScrollArea()
         self.scrollArea.setBackgroundRole(QPalette.Dark)
         self.scrollArea.setWidget(self.imageLabel)
@@ -138,9 +141,8 @@ class App(QMainWindow):
         self.scrollArea.setWidgetResizable(True)
         layout.addWidget(self.scrollArea)
 
-        # self.pred_text = QLineEdit("pred")
-        # self.pred_text.setReadOnly(True)
-        # layout.addWidget(self.pred_text)
+        label = QLabel('Label:')
+        layout.addWidget(label)
 
         self.label_text = QLineEdit("label")
         f = self.label_text.font()
@@ -149,6 +151,17 @@ class App(QMainWindow):
         self.label_text.setFocus()
         self.label_text.setReadOnly(True)
         layout.addWidget(self.label_text)
+
+        label = QLabel('OCR Predict:')
+        layout.addWidget(label)
+
+        self.pred_text = QLineEdit("pred")
+        f = self.pred_text.font()
+        f.setPointSize(27) # sets the size to 27
+        self.pred_text.setFont(f)
+        self.pred_text.setFocus()
+        self.pred_text.setReadOnly(True)
+        layout.addWidget(self.pred_text)
 
         buttons = QWidget()
         button_layout = QHBoxLayout()
@@ -279,7 +292,7 @@ class App(QMainWindow):
         self.current_line_index.setText(f'{self.current_index:05d}')
         self.current_acc_index_label.setText(f'{self.acc_file_index:05d}')
         self.total_line_label.setText(f'{len(self.current_account_file) - 1:05d}')
-        # self.pred_text.setText(pred)
+        self.pred_text.setText(pred)
         self.label_text.setText(label)
         self.loadImage(image)
 
@@ -305,6 +318,7 @@ class App(QMainWindow):
 
         font.setPointSize(min_size)
         self.label_text.setFont(font)
+        self.pred_text.setFont(font)
 
     def loadImage(self, pillow_image: Image.Image):
         image_w, image_h = pillow_image.size
