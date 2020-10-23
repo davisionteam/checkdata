@@ -74,14 +74,22 @@ class AccountFile():
         labling_text = obj['labling_text'].strip()
         points = obj['coords']
 
-        cv_image = np.array(self.image)
-        width = int(round((distance(points[0], points[1]) + distance(points[2], points[3])) / 2))
-        height = int(round((distance(points[0], points[3]) + distance(points[1], points[2])) / 2))
+        if isinstance(points, list):
+            cv_image = np.array(self.image)
+            width = int(round((distance(points[0], points[1]) + distance(points[2], points[3])) / 2))
+            height = int(round((distance(points[0], points[3]) + distance(points[1], points[2])) / 2))
 
-        M = cv2.getPerspectiveTransform(np.float32(points), np.float32([[0, 0], [width, 0], [width, height], [0, height]]))
-        image = cv2.warpPerspective(cv_image, M, (width, height))
+            M = cv2.getPerspectiveTransform(np.float32(points), np.float32([[0, 0], [width, 0], [width, height], [0, height]]))
+            image = cv2.warpPerspective(cv_image, M, (width, height))
 
-        cur_tl_img = Image.fromarray(image)
+            cur_tl_img = Image.fromarray(image)
+        elif isinstance(points, str):
+            points = points.strip()
+            x, y, w, h = [int(item) for item in points.split()]
+            cur_tl_img = self.image.crop((x, y, x + w, y + h))
+        else:
+            print('Unknow type of "coords"')
+            exit(-1)
         return cur_tl_img, predict_text, labling_text
 
     def __len__(self):
