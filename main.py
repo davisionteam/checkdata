@@ -40,7 +40,11 @@ class SwitchSignal(QWidget):
 
 class Account():
     def __init__(self, acc_dir: Path):
-        self.acc_images = sorted(list(acc_dir.glob('**/*.jpg')))
+        ext_list = ['jpg', 'jpeg', 'png']
+        ext_list.extend([x.upper() for x in ext_list])
+        ext_list = [f'**/*.{ext}' for ext in ext_list]
+
+        self.acc_images = sum([sorted(list(acc_dir.glob(pattern))) for pattern in ext_list], [])
         self.acc_jsons = [image.with_suffix('.json') for image in self.acc_images]
         self.accs = []
         for image_path, json_path in zip(self.acc_images, self.acc_jsons):
@@ -147,6 +151,7 @@ class App(QMainWindow):
         self.label_text = QLineEdit("label")
         f = self.label_text.font()
         f.setPointSize(27) # sets the size to 27
+        f.setStyleHint(QFont.Monospace)
         self.label_text.setFont(f)
         self.label_text.setFocus()
         self.label_text.setReadOnly(True)
@@ -158,6 +163,7 @@ class App(QMainWindow):
         self.pred_text = QLineEdit("pred")
         f = self.pred_text.font()
         f.setPointSize(27) # sets the size to 27
+        f.setStyleHint(QFont.Monospace)
         self.pred_text.setFont(f)
         self.pred_text.setFocus()
         self.pred_text.setReadOnly(True)
@@ -318,7 +324,10 @@ class App(QMainWindow):
 
         font.setPointSize(min_size)
         self.label_text.setFont(font)
-        self.pred_text.setFont(font)
+
+        pred_font = self.pred_text.font()
+        pred_font.setPointSize(min_size)
+        self.pred_text.setFont(pred_font)
 
     def loadImage(self, pillow_image: Image.Image):
         image_w, image_h = pillow_image.size
