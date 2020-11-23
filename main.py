@@ -162,6 +162,7 @@ class App(QMainWindow):
 
         self.label_text = QLineEdit("label")
         f = self.label_text.font()
+        f.setFamily('Times New Roman')
         f.setPointSize(27) # sets the size to 27
         f.setStyleHint(QFont.Monospace)
         self.label_text.setFont(f)
@@ -174,6 +175,7 @@ class App(QMainWindow):
 
         self.pred_text = QLineEdit("pred")
         f = self.pred_text.font()
+        f.setFamily('Times New Roman')
         f.setPointSize(27) # sets the size to 27
         f.setStyleHint(QFont.Monospace)
         self.pred_text.setFont(f)
