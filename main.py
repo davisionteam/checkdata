@@ -65,7 +65,7 @@ class AccountFile():
         self.json_path = json_path
 
         self.image: Image.Image = Image.open(image_path)
-        self.textlines = json.load(open(json_path))
+        self.textlines = json.load(open(json_path, encoding='utf8'))
         self.check_flags = [0] * len(self.textlines)
 
     def __getitem__(self, idx):
@@ -134,6 +134,10 @@ class App(QMainWindow):
         self.total_line_label = QLabel('/0')
         index_layout.addWidget(self.current_line_index)
         index_layout.addWidget(self.total_line_label)
+
+        self.rotate_clockwise_button = QPushButton('+90')
+        self.rotate_clockwise_button.clicked.connect(self.on_clockwise_button_clicked)
+        index_layout.addWidget(self.rotate_clockwise_button)
 
         self.current_path_label = QLineEdit('path')
         self.current_path_label.setFixedWidth(1000)
@@ -226,6 +230,8 @@ class App(QMainWindow):
         self.total_line_label.setText(f'{len(self.current_account_file) - 1:05d}')
         self.set_step(0)
 
+        self.rotate_degree = 0
+
     def jump_to_line_index(self):
         step = int(self.current_line_index.text())
         self.set_step(step)
@@ -247,10 +253,12 @@ class App(QMainWindow):
 
     def next_image(self):
         self.save()
+        self.rotate_degree = 0
         self.set_step(self.current_index + 1)
 
     def prev_image(self):
         self.save()
+        self.rotate_degree = 0
         self.set_step(self.current_index - 1)
 
     def on_correct_button_clicked(self):
@@ -260,6 +268,17 @@ class App(QMainWindow):
     def on_incorrect_button_clicked(self):
         self.current_account_file.check_flags[self.current_index] = 0
         self.next_image()
+
+    def on_clockwise_button_clicked(self):
+        if self.pillow_image.width * self.pillow_image.height == 0:
+            return
+        self.rotate_image(90)
+
+    def rotate_image(self, angle):
+        self.rotate_degree += angle
+        image, _, _ = self.current_account_file[self.current_index]
+        image = image.rotate(self.rotate_degree, expand=True)
+        self.loadImage(image)
 
     def is_able_to_next(self, step):
         if step >= len(self.current_account_file):
@@ -344,10 +363,10 @@ class App(QMainWindow):
         image_w = factor * image_w
         image_h = factor * image_h
         image_w, image_h = int(image_w), int(image_h)
-        pillow_image = pillow_image.resize((image_w, image_h))
+        self.pillow_image = pillow_image.resize((image_w, image_h))
 
         self.scrollArea.setVisible(True)
-        self.image = ImageQt(pillow_image)
+        self.image = ImageQt(self.pillow_image)
         self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
         self.imageLabel.setFixedSize(image_w, image_h)
         
@@ -371,7 +390,7 @@ class App(QMainWindow):
                 if flag == 0:
                     textline_incorrect.append(line)
             save_path = acc_file.json_path
-            json.dump(textline_incorrect, open(save_path, 'wt'))
+            json.dump(textline_incorrect, open(save_path, 'wt', encoding='utf8'))
 
 
 if __name__ == "__main__":
