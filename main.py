@@ -26,6 +26,32 @@ WIN_SIZE = (1024, 128)
 def distance(p1, p2):
     return np.linalg.norm(np.array(p1) - np.array(p2))
 
+
+def _order_points(pts):
+    if len(pts) == 2:
+        points = _order_points_2(pts)
+    elif len(pts) == 4:
+        points = _order_points_4(pts)
+    else:
+        raise ValueError('points must have the length of 2 or 4')
+    return points
+
+def _order_points_4(pts):
+    assert len(pts) == 4, 'Length of points must be 4'
+    tl = min(pts, key=lambda p: p[0] + p[1])
+    br = max(pts, key=lambda p: p[0] + p[1])
+    tr = max(pts, key=lambda p: p[0] - p[1])
+    bl = min(pts, key=lambda p: p[0] - p[1])
+
+    return [tl, tr, br, bl]
+
+
+def _order_points_2(pts):
+    assert len(pts) == 2, 'Length of points must be 2'
+    a = [pts[0][0], pts[1][1]]
+    b = [pts[1][0], pts[0][1]]
+    return _order_points([pts[0], pts[1], a, b])
+
 class SwitchSignal(QWidget):
 
     next = pyqtSignal()
@@ -70,44 +96,34 @@ class ImageDir():
 
         self.image: Image.Image = Image.open(image_path)
         self.json_gt = json.load(open(json_path, encoding='utf8'))
-        self.textlines_diff = json.load(open(json_diff_path, encoding='utf8'))
-        self.check_flags = [0] * len(self.textlines_diff)
+
+        self.textlines = []
+        textlines_diff = json.load(open(json_diff_path, encoding='utf8'))
+        for textline_diff in textlines_diff:
+            predict_text = textline_diff['predict_text'].strip()
+            print(textline_diff)
+            points = _order_points(textline_diff['coords'])
+            ref = self.find_ref_by_coords(points)
+            if ref is None:
+                print(f'{textline_diff} does not have corresponding label in groundtruth')
+                continue
+
+            if 'value' not in ref.keys():
+                print(f'Field "value" is not found in {ref}')
+                continue
+
+            textline = TextLine(ref, predict_text, self.image)
+            self.textlines.append(textline)
 
     def __getitem__(self, idx):
-        obj = self.textlines_diff[idx]
-        predict_text = obj['predict_text'].strip()
-        label_text = obj['label_text'].strip()
-        points = obj['coords']
-        ref = self.find_ref_by_coords(points)
-        textline = TextLine(ref, predict_text)
-
-        if isinstance(points, list):
-            cv_image = np.array(self.image)
-            width = int(round((distance(points[0], points[1]) + distance(points[2], points[3])) / 2))
-            height = int(round((distance(points[0], points[3]) + distance(points[1], points[2])) / 2))
-
-            M = cv2.getPerspectiveTransform(np.float32(points), np.float32([[0, 0], [width, 0], [width, height], [0, height]]))
-            image = cv2.warpPerspective(cv_image, M, (width, height))
-
-            cur_tl_img = Image.fromarray(image)
-        elif isinstance(points, str):
-            points = points.strip()
-            x, y, w, h = [int(item) for item in points.split()]
-            cur_tl_img = self.image.crop((x, y, x + w, y + h))
-        else:
-            print('Unknow type of "coords"')
-            exit(-1)
-        return textline, cur_tl_img
-
-    def update_line_value(self, ref: Dict, value: str):
-        ref['value'] = value
+        return self.textlines[idx]
 
     def find_ref_by_coords(self, coords: List) -> Optional[Dict]:
         for shape in self.json_gt['shapes']:
             if len(shape['points']) != 4:
                 # we know that textline must have 4 coords
                 continue
-            if self.is_same_coords(shape['points'], coords):
+            if self.is_same_coords(_order_points(shape['points']), coords):
                 return shape
         return None
 
@@ -134,7 +150,7 @@ class ImageDir():
         return coords
 
     def __len__(self):
-        return len(self.textlines_diff)
+        return len(self.textlines)
 
     def save(self):
         json.dump(self.json_gt,
@@ -143,9 +159,10 @@ class ImageDir():
                   ensure_ascii=False)
 
 class TextLine():
-    def __init__(self, ref: Dict, predict: str):
+    def __init__(self, ref: Dict, predict: str, image: Image.Image):
         self.ref = ref
         self.predict = predict
+        self.full_image = image
 
     @property
     def textline(self) -> str:
@@ -158,6 +175,27 @@ class TextLine():
     @property
     def coords(self):
         return self.ref['points']
+
+    @property
+    def image(self):
+        points = _order_points(self.coords)
+        if isinstance(points, list):
+            cv_image = np.array(self.full_image)
+            width = int(round((distance(points[0], points[1]) + distance(points[2], points[3])) / 2))
+            height = int(round((distance(points[0], points[3]) + distance(points[1], points[2])) / 2))
+
+            M = cv2.getPerspectiveTransform(np.float32(points), np.float32([[0, 0], [width, 0], [width, height], [0, height]]))
+            image = cv2.warpPerspective(cv_image, M, (width, height))
+
+            textline_image = Image.fromarray(image)
+        elif isinstance(points, str):
+            points = points.strip()
+            x, y, w, h = [int(item) for item in points.split()]
+            textline_image = self.image.crop((x, y, x + w, y + h))
+        else:
+            print('Unknow type of "coords"')
+            exit(-1)
+        return textline_image
 
 class App(QMainWindow):
     def __init__(self, acc_dir):
@@ -324,8 +362,8 @@ class App(QMainWindow):
 
     def rotate_image(self, angle):
         self.rotate_degree += angle
-        _, image = self.current_image_dir[self.current_index]
-        image = image.rotate(self.rotate_degree, expand=True)
+        textline = self.current_image_dir[self.current_index]
+        image = textline.image.rotate(self.rotate_degree, expand=True)
         self.loadImage(image)
 
     def is_able_to_next(self, step):
@@ -357,10 +395,10 @@ class App(QMainWindow):
             step = len(self.current_image_dir) - 1
 
         self.current_index = step
-        textline, image = self.current_image_dir[step]
+        textline = self.current_image_dir[step]
 
-        if image.size[0] * image.size[1] == 0:
-            print(f'Width or height is 0. WxH = {image.size[0]}x{image.size[1]}')
+        if textline.image.size[0] * textline.image.size[1] == 0:
+            print(f'Width or height is 0. WxH = {textline.image.size[0]}x{textline.image.size[1]}')
             if self.is_able_to_next(step):
                 self.next_image()
                 return
@@ -377,7 +415,7 @@ class App(QMainWindow):
         self.total_line_label.setText(f'{len(self.current_image_dir) - 1:05d}')
         self.pred_text.setText(textline.predict)
         self.label_text.setText(textline.textline)
-        self.loadImage(image)
+        self.loadImage(textline.image)
 
         #### Resize font
         # Use binary search to efficiently find the biggest font that will fit.
