@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import (QApplication, QGroupBox, QHBoxLayout, QLabel,
 from widgets.card_viewer import CardViewer
 from widgets.textline_editor import TextLineEditor
 from widgets.class_editor import ClassEditor
+from widgets.index_widget import IndexWidget
 WIN_SIZE = (1024, 128)
 from utils.utils import distance, _order_points
 
@@ -51,6 +52,13 @@ class Dataset(QObject):
 
     def __len__(self):
         return len(self.accs)
+
+    @pyqtSlot(int)
+    def on_request_card_index(self, index: int):
+        if 0 <= index < len(self):
+            self.current_card_idx = index
+            image_path, json_path, json_diff = list(map(str, self.accs[self.current_card_idx]))
+            self.new_card.emit(image_path, json_path, json_diff)
 
     @pyqtSlot()
     def on_request_next_card(self):
@@ -83,6 +91,10 @@ class App(QMainWindow):
 
         layout = QVBoxLayout()
 
+        index_selector = IndexWidget(self.dataset)
+        index_selector.on_change.connect(self.dataset.on_request_card_index)
+        layout.addWidget(index_selector)
+
         card_viewer = CardViewer()
         layout.addWidget(card_viewer)
 
@@ -94,6 +106,7 @@ class App(QMainWindow):
 
         card_viewer.next_textline_handler.connect(textline_editor.on_new_textline)
         card_viewer.next_textline_handler.connect(class_editor.on_new_textline)
+        card_viewer.next_card_signal.connect(index_selector.update_card_index)
         card_viewer.next_card_signal.connect(self.dataset.on_request_next_card)
         card_viewer.prev_card_signal.connect(self.dataset.on_request_prev_card)
         self.dataset.new_card.connect(card_viewer.on_set_card)
