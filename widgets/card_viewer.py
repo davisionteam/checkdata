@@ -114,7 +114,6 @@ class CardViewer(QWidget):
             textline_location = [(abs(text_x - x_min), abs(text_y - y_min)) for (text_x, text_y) in textline_coords]
         else:
             textline_location = transform(textline_coords, self.M)
-            print(textline_location)
 
         back = self.card_image.copy()
         poly = self.card_image.copy()

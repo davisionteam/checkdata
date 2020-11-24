@@ -29,11 +29,9 @@ class TextLineEditor(QWidget):
         self.setFixedHeight(300)
         layout = QVBoxLayout()
 
-        # self.rotate_clockwise_button = QPushButton('+90')
-        # self.rotate_clockwise_button.clicked.connect(self.on_clockwise_button_clicked)
-        # index_layout.addWidget(self.rotate_clockwise_button)
-        # index_widget.setLayout(index_layout)
-        # layout.addWidget(index_widget)
+        self.rotate_clockwise_button = QPushButton('+90')
+        self.rotate_clockwise_button.clicked.connect(self.on_clockwise_button_clicked)
+        layout.addWidget(self.rotate_clockwise_button)
 
         label = QLabel('Text Line Image')
         layout.addWidget(label)
@@ -86,8 +84,6 @@ class TextLineEditor(QWidget):
         #     print('Nothing to do! Nice!')
         #     exit(0)
 
-        self.label_text.installEventFilter(self)
-
         # self.need_save = False
         # self.acc_file_index = 0
         # self.current_image_dir = self.account[0]
@@ -95,13 +91,16 @@ class TextLineEditor(QWidget):
         # self.total_line_label.setText(f'{len(self.current_image_dir) - 1:05d}')
         # self.set_step(0)
 
-        # self.rotate_degree = 0
+        self.rotate_degree = 0
 
         #######################
         # Set shortcut
         #######################
         shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
         shortcut.activated.connect(self._on_save)
+
+        rotate_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
+        rotate_shortcut.activated.connect(self.on_clockwise_button_clicked)
 
         self.label_text.textChanged.connect(self._on_text_change)
         self.label_text.returnPressed.connect(self._on_save)
@@ -118,6 +117,7 @@ class TextLineEditor(QWidget):
             print(f'Width or height is 0. WxH = {textline.image.size[0]}x{textline.image.size[1]}')
             return
 
+        self.current_textline = textline
         self.loadImage(textline.image)
         self.label_text.setText(textline.textline)
         self.pred_text.setText(textline.predict)
@@ -156,16 +156,15 @@ class TextLineEditor(QWidget):
     #     self.rotate_degree = 0
     #     self.set_step(self.current_index - 1)
 
-    # def on_clockwise_button_clicked(self):
-    #     if self.pillow_image.width * self.pillow_image.height == 0:
-    #         return
-    #     self.rotate_image(90)
+    def on_clockwise_button_clicked(self):
+        if self.pillow_image.width * self.pillow_image.height == 0:
+            return
+        self.rotate_image(90)
 
-    # def rotate_image(self, angle):
-    #     self.rotate_degree += angle
-    #     textline = self.current_image_dir[self.current_index]
-    #     image = textline.image.rotate(self.rotate_degree, expand=True)
-    #     self.loadImage(image)
+    def rotate_image(self, angle):
+        self.rotate_degree += angle
+        image = self.current_textline.image.rotate(self.rotate_degree, expand=True)
+        self.loadImage(image)
 
     # def is_able_to_next(self, step):
     #     if step >= len(self.current_image_dir):
@@ -247,7 +246,7 @@ class TextLineEditor(QWidget):
 
     def loadImage(self, pillow_image: Image.Image):
         image_w, image_h = pillow_image.size
-        target_h = 64
+        target_h = 32
         factor = target_h / image_h
         image_w = factor * image_w
         image_h = factor * image_h
