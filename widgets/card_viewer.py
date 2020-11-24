@@ -19,7 +19,7 @@ class CardViewer(QWidget):
 
     def __init__(self):
         super().__init__()
-        
+
         self.imageLabel = QLabel()
         self.imageLabel.setBackgroundRole(QPalette.Base)
         self.imageLabel.setScaledContents(True)
@@ -68,6 +68,11 @@ class CardViewer(QWidget):
         textline = self.textlines[self.current_textline_idx]
         textline.textline = new_text
 
+    @pyqtSlot(str)
+    def on_update_textline_classname(self, new_classname):
+        textline = self.textlines[self.current_textline_idx]
+        textline.class_name = new_classname
+
     @pyqtSlot()
     def on_next_textline(self):
         self._set_line_index(self.current_textline_idx + 1)
@@ -102,7 +107,7 @@ class CardViewer(QWidget):
         pdraw = ImageDraw.Draw(poly)
         pdraw.polygon(textline_location, fill=(200,0,0),outline=(255,0,0))
         back = Image.blend(back, poly, alpha=0.2)
-        
+
         self.image = ImageQt(back)
         self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
 
@@ -204,6 +209,14 @@ class TextLine():
     @property
     def coords(self):
         return self.ref['points']
+
+    @property
+    def class_name(self):
+        return self.ref['label']
+
+    @class_name.setter
+    def class_name(self, new_name):
+        self.ref['label'] = new_name
 
     @property
     def image(self):

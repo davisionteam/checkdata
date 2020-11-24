@@ -132,7 +132,7 @@ class TextLineEditor(QWidget):
     # def jump_to_line_index(self):
     #     step = int(self.current_line_index.text())
     #     self.set_step(step)
-    
+
     # def jump_to_acc_file(self):
     #     acc_index = min(int(self.current_acc_index_label.text()), len(self.account) - 1)
     #     line_index = min(int(self.current_line_index.text()), len(self.account[acc_index]) - 1)
@@ -183,14 +183,14 @@ class TextLineEditor(QWidget):
     #     if step >= len(self.current_image_dir):
     #         if self.acc_file_index == len(self.account) - 1:
     #             return
-    #         else:    
+    #         else:
     #             self.acc_file_index += 1
     #         self.current_image_dir = self.account[self.acc_file_index]
     #         step = 0
     #     elif step < 0:
     #         if self.acc_file_index == 0:
     #             return
-    #         else:    
+    #         else:
     #             self.acc_file_index -= 1
     #         self.current_image_dir = self.account[self.acc_file_index]
     #         step = len(self.current_image_dir) - 1
@@ -257,7 +257,7 @@ class TextLineEditor(QWidget):
         self.image = ImageQt(self.pillow_image)
         self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
         self.imageLabel.setFixedSize(image_w, image_h)
-        
+
         # self.adjustScrollBar(self.scrollArea.horizontalScrollBar(), 0)
         # self.adjustScrollBar(self.scrollArea.verticalScrollBar(), 1.0)
 

@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (QApplication, QGroupBox, QHBoxLayout, QLabel,
                              QVBoxLayout, QWidget)
 from widgets.card_viewer import CardViewer
 from widgets.textline_editor import TextLineEditor
+from widgets.class_editor import ClassEditor
 WIN_SIZE = (1024, 128)
 from utils.utils import distance, _order_points
 
@@ -44,7 +45,7 @@ class Dataset(QObject):
         #     if len(acc_file) > 0:
         #         self.accs.append(acc_file)
         self.current_card_idx = -1
-    
+
     def __getitem__(self, idx):
         return self.accs[idx]
 
@@ -85,15 +86,20 @@ class App(QMainWindow):
         card_viewer = CardViewer()
         layout.addWidget(card_viewer)
 
+        class_editor = ClassEditor(Path('./config.yaml'))
+        layout.addWidget(class_editor)
+
         textline_editor = TextLineEditor()
         layout.addWidget(textline_editor)
 
         card_viewer.next_textline_handler.connect(textline_editor.on_new_textline)
+        card_viewer.next_textline_handler.connect(class_editor.on_new_textline)
         card_viewer.next_card_signal.connect(self.dataset.on_request_next_card)
         card_viewer.prev_card_signal.connect(self.dataset.on_request_prev_card)
         self.dataset.new_card.connect(card_viewer.on_set_card)
         textline_editor.on_change.connect(card_viewer.on_update_textline_label)
         textline_editor.on_done.connect(card_viewer.on_next_textline)
+        class_editor.on_class_name_change.connect(card_viewer.on_update_textline_classname)
         self.next_line_signal.connect(card_viewer.on_next_textline)
         self.prev_line_signal.connect(card_viewer.on_prev_textline)
 
@@ -107,7 +113,7 @@ class App(QMainWindow):
 
         # set the first line of the first card
         self.dataset.on_request_next_card()
-    
+
     def eventFilter(self, source, event):
         if (event.type() == QEvent.KeyPress):
             if event.key() == Qt.Key_Down:
