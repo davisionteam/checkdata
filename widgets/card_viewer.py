@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 from utils.utils import distance, _order_points, flatten_coords
 import json
+from PIL import ImageDraw
 
 
 class CardViewer(QWidget):
@@ -43,7 +44,7 @@ class CardViewer(QWidget):
         self.full_image = Image.open(image_path)
         self.card_json = json.load(open(json_path, encoding='utf8'))
 
-        self.card_image, self.card_location = self.extract_card(self.full_image, self.card_json)
+        self.card_image, self.card_location, self.M = self.extract_card(self.full_image, self.card_json)
         self.textlines = self.extract_textlines(json_diff_path)
         print(json_path, len(self.textlines))
         if len(self.textlines) == 0:
@@ -94,14 +95,27 @@ class CardViewer(QWidget):
             self.next_textline_handler.emit(textline)
 
     def _highlight_textline(self):
+        def transform(polygon, M):
+            polygon = list(polygon)
+            for i, pts in enumerate(polygon):
+                v = [pts[0], pts[1], 1]
+                x = (M[0][0] * v[0] + M[0][1] * v[1] + M[0][2]) / (M[2][0] * v[0] + M[2][1] * v[1] + M[2][2])
+                y = (M[1][0] * v[0] + M[1][1] * v[1] + M[1][2]) / (M[2][0] * v[0] + M[2][1] * v[1] + M[2][2])
+                polygon[i] = (int(x), int(y))
+            return polygon
+
         assert len(self.card_location) == 4
         textline = self.textlines[self.current_textline_idx]
         textline_coords = _order_points(textline.coords)
-        x_min = min([x for (x, y) in self.card_location])
-        y_min = min([y for (x, y) in self.card_location])
-        textline_location = [(abs(text_x - x_min), abs(text_y - y_min)) for (text_x, text_y) in textline_coords]
 
-        from PIL import ImageDraw
+        if self.M is None:
+            x_min = min([x for (x, y) in self.card_location])
+            y_min = min([y for (x, y) in self.card_location])
+            textline_location = [(abs(text_x - x_min), abs(text_y - y_min)) for (text_x, text_y) in textline_coords]
+        else:
+            textline_location = transform(textline_coords, self.M)
+            print(textline_location)
+
         back = self.card_image.copy()
         poly = self.card_image.copy()
         pdraw = ImageDraw.Draw(poly)
@@ -122,6 +136,7 @@ class CardViewer(QWidget):
                     y_max = max([int(y) for (x, y) in points])
                     card_image = self.full_image.crop((x_min, y_min, x_max, y_max))
                     location = _order_points([[x_min, y_min], [x_max, y_max]])
+                    M = None
                 else:
                     points = _order_points(points)
                     cv_image = np.array(pil_image)
@@ -131,7 +146,7 @@ class CardViewer(QWidget):
                     image = cv2.warpPerspective(cv_image, M, (width, height))
                     location = points
                     card_image = Image.fromarray(image)
-                return card_image, location
+                return card_image, location, M
         return None, None
 
     def extract_textlines(self, json_diff_path: Path):
