@@ -37,7 +37,7 @@ class Dataset(QObject):
         ext_list.extend([x.upper() for x in ext_list])
         ext_list = [f'**/*.{ext}' for ext in ext_list]
 
-        self.acc_images = sum([sorted(list(acc_dir.glob(pattern))) for pattern in ext_list], [])
+        self.acc_images: List[Path] = sum([sorted(list(acc_dir.glob(pattern))) for pattern in ext_list], [])
         self.acc_jsons = [image.with_suffix('.json') for image in self.acc_images]
         self.acc_json_diff = [image.with_name(image.stem + '_checked.json') for image in self.acc_images]
         self.accs = list(zip(self.acc_images, self.acc_jsons, self.acc_json_diff))
@@ -89,20 +89,21 @@ class App(QMainWindow):
         super().__init__()
         self.dataset = Dataset(acc_dir)
 
-        layout = QVBoxLayout()
+        left_layout = QVBoxLayout()
 
         index_selector = IndexWidget(self.dataset)
         index_selector.on_change.connect(self.dataset.on_request_card_index)
-        layout.addWidget(index_selector)
+        left_layout.addWidget(index_selector)
 
         card_viewer = CardViewer()
-        layout.addWidget(card_viewer)
+        left_layout.addWidget(card_viewer)
 
-        class_editor = ClassEditor(Path('./config.yaml'))
-        layout.addWidget(class_editor)
+        right_layout = QVBoxLayout()
+        class_editor = ClassEditor()
+        right_layout.addWidget(class_editor)
 
         textline_editor = TextLineEditor()
-        layout.addWidget(textline_editor)
+        right_layout.addWidget(textline_editor)
 
         card_viewer.next_textline_handler.connect(textline_editor.on_new_textline)
         card_viewer.next_textline_handler.connect(class_editor.on_new_textline)
@@ -117,7 +118,17 @@ class App(QMainWindow):
         self.prev_line_signal.connect(card_viewer.on_prev_textline)
 
         root = QWidget()
-        root.setLayout(layout)
+        layout = QHBoxLayout(root)
+
+        left_widget = QWidget()
+        left_widget.setLayout(left_layout)
+        layout.addWidget(left_widget)
+
+        right_widget = QWidget()
+        right_widget.setLayout(right_layout)
+        right_widget.setFixedWidth(800)
+        right_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(right_widget)
         root.adjustSize()
         self.setCentralWidget(root)
         self.adjustSize()

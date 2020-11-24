@@ -17,11 +17,8 @@ class ClassEditor(QWidget):
 
     on_class_name_change = pyqtSignal(str)
 
-    def __init__(self, config_file: Path):
+    def __init__(self):
         super().__init__()
-        config_dict = yaml.safe_load(open(config_file, encoding='utf8'))['alparser']['LabelExtractor']
-        card_types = config_dict['card_types']
-        default_fields = config_dict['default_fields']
 
         fields = [
             'O_DEPART',
