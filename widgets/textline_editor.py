@@ -29,17 +29,11 @@ class TextLineEditor(QWidget):
         self.setFixedHeight(300)
         layout = QVBoxLayout()
 
-        self.rotate_clockwise_button = QPushButton('+90')
-        self.rotate_clockwise_button.clicked.connect(self.on_clockwise_button_clicked)
-        layout.addWidget(self.rotate_clockwise_button)
-
-        self.zoom_in_button = QPushButton('+')
-        self.zoom_in_button.clicked.connect(self.zoom_in_image)
-        layout.addWidget(self.zoom_in_button)
-
-        self.zoom_out_button = QPushButton('-')
-        self.zoom_out_button.clicked.connect(self.zoom_out_image)
-        layout.addWidget(self.zoom_out_button)
+        toolbar = _Toolbox()
+        toolbar.zoom_in_signal.connect(self.zoom_in_image)
+        toolbar.zoom_out_signal.connect(self.zoom_out_image)
+        toolbar.rotate_signal.connect(self.on_clockwise_button_clicked)
+        layout.addWidget(toolbar)
 
         label = QLabel('Text Line Image')
         layout.addWidget(label)
@@ -86,15 +80,6 @@ class TextLineEditor(QWidget):
         #######################
         shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
         shortcut.activated.connect(self._on_save)
-
-        rotate_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
-        rotate_shortcut.activated.connect(self.on_clockwise_button_clicked)
-
-        zoom_in_shortcut = QShortcut(QKeySequence("Ctrl+="), self)
-        zoom_in_shortcut.activated.connect(self.zoom_in_image)
-
-        zoom_out_shortcut = QShortcut(QKeySequence("Ctrl+-"), self)
-        zoom_out_shortcut.activated.connect(self.zoom_out_image)
 
         self.label_text.textChanged.connect(self._on_text_change)
         self.label_text.returnPressed.connect(self._on_save)
@@ -161,7 +146,44 @@ class TextLineEditor(QWidget):
     #                             + ((factor - 1) * scrollBar.pageStep()/2)))
 
 class _Toolbox(QWidget):
+
+    rotate_signal = pyqtSignal()
+    zoom_in_signal = pyqtSignal()
+    zoom_out_signal = pyqtSignal()
+
     def __init__(self):
         super().__init__()
 
+        layout = QHBoxLayout(self)
 
+        self.rotate_clockwise_button = QPushButton('+90')
+        self.rotate_clockwise_button.clicked.connect(self.on_clockwise_button_clicked)
+        layout.addWidget(self.rotate_clockwise_button)
+
+        self.zoom_in_button = QPushButton('+')
+        self.zoom_in_button.clicked.connect(self.zoom_in_button_clicked)
+        layout.addWidget(self.zoom_in_button)
+
+        self.zoom_out_button = QPushButton('-')
+        self.zoom_out_button.clicked.connect(self.zoom_out_button_clicked)
+        layout.addWidget(self.zoom_out_button)
+
+        rotate_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
+        rotate_shortcut.activated.connect(self.on_clockwise_button_clicked)
+
+        zoom_in_shortcut = QShortcut(QKeySequence("Ctrl+="), self)
+        zoom_in_shortcut.activated.connect(self.zoom_in_button_clicked)
+
+        zoom_out_shortcut = QShortcut(QKeySequence("Ctrl+-"), self)
+        zoom_out_shortcut.activated.connect(self.zoom_out_button_clicked)
+
+        self.adjustSize()
+
+    def on_clockwise_button_clicked(self):
+        self.rotate_signal.emit()
+
+    def zoom_in_button_clicked(self):
+        self.zoom_in_signal.emit()
+
+    def zoom_out_button_clicked(self):
+        self.zoom_out_signal.emit()
