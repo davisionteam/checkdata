@@ -158,10 +158,6 @@ class CardViewer(QWidget):
                 print(f'{textline_diff} does not have corresponding label in groundtruth')
                 continue
 
-            if 'value' not in ref.keys():
-                print(f'Field "value" is not found in {ref}')
-                continue
-
             textline = TextLine(ref, predict_text, self.full_image)
             textlines.append(textline)
         return textlines
@@ -171,14 +167,14 @@ class CardViewer(QWidget):
 
     def find_ref_by_coords(self, coords: List) -> Optional[Dict]:
         for shape in self.card_json['shapes']:
-            if len(shape['points']) != 4:
-                # we know that textline must have 4 coords
-                continue
             if self.is_same_coords(_order_points(shape['points']), _order_points(coords)):
                 return shape
         return None
 
     def is_same_coords(self, coords1, coords2) -> bool:
+        if len(coords1) != len(coords2):
+            return False
+
         if isinstance(coords1, list):
             coords1 = flatten_coords(coords1)
         else:
@@ -214,11 +210,12 @@ class TextLine():
 
     @property
     def textline(self) -> str:
-        return self.ref['value']
+        return self.ref.get('value', '')
 
     @textline.setter
     def textline(self, value):
-        self.ref['value'] = value
+        if value != '':
+            self.ref['value'] = value
 
     @property
     def coords(self):
