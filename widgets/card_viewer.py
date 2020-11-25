@@ -220,7 +220,10 @@ class TextLine():
 
     @textline.setter
     def textline(self, value):
-        if value != '':
+        if value == '':
+            if 'value' in self.ref.keys():
+                del self.ref['value']
+        else:
             self.ref['value'] = value
 
     @property
