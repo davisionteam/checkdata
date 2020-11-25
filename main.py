@@ -84,6 +84,8 @@ class App(QMainWindow):
 
     next_line_signal = pyqtSignal()
     prev_line_signal = pyqtSignal()
+    next_card_signal = pyqtSignal()
+    prev_card_signal = pyqtSignal()
 
     def __init__(self, acc_dir):
         super().__init__()
@@ -116,6 +118,8 @@ class App(QMainWindow):
         class_editor.on_class_name_change.connect(card_viewer.on_update_textline_classname)
         self.next_line_signal.connect(card_viewer.on_next_textline)
         self.prev_line_signal.connect(card_viewer.on_prev_textline)
+        self.next_card_signal.connect(self.dataset.on_request_next_card)
+        self.prev_card_signal.connect(self.dataset.on_request_prev_card)
 
         root = QWidget()
         layout = QHBoxLayout(root)
@@ -145,6 +149,10 @@ class App(QMainWindow):
                 self.next_line_signal.emit()
             elif event.key() == Qt.Key_Up:
                 self.prev_line_signal.emit()
+            elif event.key() == Qt.Key_PageDown:
+                self.next_card_signal.emit()
+            elif event.key() == Qt.Key_PageUp:
+                self.prev_card_signal.emit()
         return super().eventFilter(source, event)
 
 if __name__ == "__main__":
