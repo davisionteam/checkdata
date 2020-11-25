@@ -126,7 +126,7 @@ class CardViewer(QWidget):
 
     def extract_card(self, pil_image, json_dict):
         for shape in json_dict['shapes']:
-            if shape['label'] in ['CCCD_BACK', 'CCCD', 'BLX', 'BLX_back', 'CMND', 'CMND_back', 'CMCC']:
+            if shape['label'].upper() in ['CCCD_BACK', 'CCCD', 'BLX', 'BLX_BACK', 'CMND', 'CMND_BACK', 'CMCC']:
                 points = shape['points']
                 if len(points) > 4:
                     x_min = min([int(x) for (x, y) in points])
