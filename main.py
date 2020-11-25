@@ -122,11 +122,12 @@ class App(QMainWindow):
 
         left_widget = QWidget()
         left_widget.setLayout(left_layout)
+        left_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         layout.addWidget(left_widget)
 
         right_widget = QWidget()
         right_widget.setLayout(right_layout)
-        right_widget.setFixedWidth(800)
+        # right_widget.setFixedWidth(800)
         right_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(right_widget)
         root.adjustSize()

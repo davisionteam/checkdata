@@ -19,12 +19,29 @@ class IndexWidget(QWidget):
 
         layout = QHBoxLayout(self)
 
-        self.index_line_edit = QLineEdit('0')
+        self.index_line_edit = QLineEdit(f'{0:05d}')
         self.index_line_edit.setValidator(QIntValidator(0, len(dataset) - 1))
+        self.index_line_edit.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.index_line_edit.adjustSize()
         layout.addWidget(self.index_line_edit)
 
         self.length_label = QLabel(f'{len(dataset) - 1:05d}')
+        self.length_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         layout.addWidget(self.length_label)
+
+        self.path_label = QLabel('Image path')
+        self.path_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        layout.addWidget(self.path_label)
+
+        self.path_line_edit = QLineEdit(f'')
+        self.path_line_edit.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.path_line_edit.setReadOnly(True)
+        self.path_line_edit.adjustSize()
+        layout.addWidget(self.path_line_edit)
+
+        self.adjustSize()
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         self.index_line_edit.returnPressed.connect(self._on_text_change)
         self.dataset = dataset
@@ -39,3 +56,5 @@ class IndexWidget(QWidget):
     def update_card_index(self):
         index = self.dataset.current_card_idx
         self.index_line_edit.setText(f'{index:05d}')
+        image_path, _, _ = self.dataset[index]
+        self.path_line_edit.setText(str(image_path))
