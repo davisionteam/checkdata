@@ -72,27 +72,3 @@ class ClassEditor(QWidget):
         if self.combo_box.findText(class_name, Qt.MatchExactly) < 0:
             QMessageBox.warning(self, 'Warning', f'Invalid Field Class = {class_name}. Please choose one from the list')
             self._on_text_change(self.current_class_name) # reset previous class_name
-
-    def loadImage(self, pillow_image: Image.Image):
-        image_w, image_h = pillow_image.size
-        target_h = 64
-        factor = target_h / image_h
-        image_w = factor * image_w
-        image_h = factor * image_h
-        image_w, image_h = int(image_w), int(image_h)
-        self.pillow_image = pillow_image.resize((image_w, image_h))
-        self.scrollArea.setVisible(True)
-        self.image = ImageQt(self.pillow_image)
-        self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
-        self.imageLabel.setFixedSize(image_w, image_h)
-
-        # self.adjustScrollBar(self.scrollArea.horizontalScrollBar(), 0)
-        # self.adjustScrollBar(self.scrollArea.verticalScrollBar(), 1.0)
-
-        # self.current_path_label.setText(str(self.current_image_dir.image_path))
-        # message = "{}, {}x{}, Depth: {}".format(self.current_image_dir.image_path, self.image.width(), self.image.height(), self.image.depth())
-        # self.statusBar().showMessage(message)
-
-    # def adjustScrollBar(self, scrollBar: QScrollBar, factor: float):
-    #     scrollBar.setValue(int(factor * scrollBar.value()
-    #                             + ((factor - 1) * scrollBar.pageStep()/2)))

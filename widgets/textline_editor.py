@@ -15,14 +15,13 @@ class TextLineEditor(QWidget):
     def __init__(self):
         super().__init__()
         self.image = QImage()
-        self.scaleFactor = 1.0
+        self.setFixedHeight(400)
 
         self.imageLabel = QLabel()
         self.imageLabel.setBackgroundRole(QPalette.Base)
-        self.imageLabel.setFixedSize(1024, 64)
+        self.imageLabel.setFixedSize(1024, 128)
         self.imageLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.imageLabel.setScaledContents(True)
-        self.setFixedHeight(300)
         layout = QVBoxLayout()
 
         toolbar = _Toolbox()
@@ -39,6 +38,7 @@ class TextLineEditor(QWidget):
         self.scrollArea.setWidget(self.imageLabel)
         self.scrollArea.setVisible(False)
         self.scrollArea.setWidgetResizable(False)
+        self.scrollArea.setFixedHeight(128)
         layout.addWidget(self.scrollArea)
 
         label = QLabel('Label:')
@@ -68,6 +68,7 @@ class TextLineEditor(QWidget):
         layout.addWidget(self.pred_text)
 
         self.setLayout(layout)
+        self.adjustSize()
         self.rotate_degree = 0
         self.scale_factor = 1.0
 
@@ -129,17 +130,6 @@ class TextLineEditor(QWidget):
         self.image = ImageQt(self.pillow_image)
         self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
         self.imageLabel.setFixedSize(self.pillow_image.size[0], self.pillow_image.size[1])
-
-        # self.adjustScrollBar(self.scrollArea.horizontalScrollBar(), 0)
-        # self.adjustScrollBar(self.scrollArea.verticalScrollBar(), 1.0)
-
-        # self.current_path_label.setText(str(self.current_image_dir.image_path))
-        # message = "{}, {}x{}, Depth: {}".format(self.current_image_dir.image_path, self.image.width(), self.image.height(), self.image.depth())
-        # self.statusBar().showMessage(message)
-
-    # def adjustScrollBar(self, scrollBar: QScrollBar, factor: float):
-    #     scrollBar.setValue(int(factor * scrollBar.value()
-    #                             + ((factor - 1) * scrollBar.pageStep()/2)))
 
 class _Toolbox(QWidget):
 
