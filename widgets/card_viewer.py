@@ -167,13 +167,16 @@ class CardViewer(QWidget):
 
     def find_ref_by_coords(self, coords: List) -> Optional[Dict]:
         for shape in self.card_json['shapes']:
-            if self.is_same_coords(_order_points(shape['points']), _order_points(coords)):
+            if self.is_same_coords(shape['points'], coords):
                 return shape
         return None
 
     def is_same_coords(self, coords1, coords2) -> bool:
         if len(coords1) != len(coords2):
             return False
+
+        coords1 = _order_points(coords1)
+        coords2 = _order_points(coords2)
 
         if isinstance(coords1, list):
             coords1 = flatten_coords(coords1)
