@@ -172,11 +172,14 @@ class CardViewer(QWidget):
         return None
 
     def is_same_coords(self, coords1, coords2) -> bool:
+        if len(coords1) in [2, 4]:
+            coords1 = _order_points(coords1)
+
+        if len(coords2) in [2, 4]:
+            coords2 = _order_points(coords2)
+
         if len(coords1) != len(coords2):
             return False
-
-        coords1 = _order_points(coords1)
-        coords2 = _order_points(coords2)
 
         if isinstance(coords1, list):
             coords1 = flatten_coords(coords1)
