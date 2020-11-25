@@ -1,17 +1,8 @@
-
-from PIL.ImageQt import ImageQt
-from PyQt5.QtCore import QEvent, QSize, Qt, pyqtSignal, qDebug, pyqtSlot
-from PyQt5.QtGui import (QColor, QFont, QFontMetrics, QGuiApplication, QImage,
-                         QImageReader, QImageWriter, QIntValidator, QKeyEvent,
-                         QKeySequence, QPainter, QPalette, QPixmap)
-from PyQt5.QtWidgets import (QApplication, QGroupBox, QHBoxLayout, QLabel, QComboBox,
-                             QLineEdit, QMainWindow, QMessageBox, QPushButton,
-                             QScrollArea, QScrollBar, QShortcut, QSizePolicy,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import (QComboBox, QLabel, QMessageBox, QVBoxLayout,
+                             QWidget)
 from PIL import Image
-from pathlib import Path
-import yaml
-
 
 class ClassEditor(QWidget):
 

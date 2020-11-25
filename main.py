@@ -1,31 +1,17 @@
-import csv
-import glob
-import json
-import math
-import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List
 
-import cv2
-import numpy as np
-import pandas as pd
-from PIL import Image
-from PIL.ImageQt import ImageQt
-from PyQt5.QtCore import QEvent, QSize, Qt, pyqtSignal, qDebug, QObject, pyqtSlot
-from PyQt5.QtGui import (QColor, QFont, QFontMetrics, QGuiApplication, QImage,
-                         QImageReader, QImageWriter, QIntValidator, QKeyEvent,
-                         QKeySequence, QPainter, QPalette, QPixmap)
-from PyQt5.QtWidgets import (QApplication, QGroupBox, QHBoxLayout, QLabel,
-                             QLineEdit, QMainWindow, QMessageBox, QPushButton,
-                             QScrollArea, QScrollBar, QShortcut, QSizePolicy,
-                             QVBoxLayout, QWidget)
+from PyQt5.QtCore import (QEvent, QObject, Qt, pyqtSignal, pyqtSlot)
+from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMainWindow,
+                             QSizePolicy, QVBoxLayout, QWidget)
+
 from widgets.card_viewer import CardViewer
-from widgets.textline_editor import TextLineEditor
 from widgets.class_editor import ClassEditor
 from widgets.index_widget import IndexWidget
+from widgets.textline_editor import TextLineEditor
+
 WIN_SIZE = (1024, 128)
-from utils.utils import distance, _order_points
 
 
 class Dataset(QObject):
