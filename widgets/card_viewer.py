@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
-from PyQt5.QtWidgets import QWidget, QLabel, QScrollArea
+from PyQt5.QtWidgets import QWidget, QLabel, QScrollArea, QSizePolicy, QVBoxLayout
 from PyQt5.QtGui import QPixmap, QPalette
 from PIL import Image
 from PIL.ImageQt import ImageQt
@@ -21,10 +21,10 @@ class CardViewer(QWidget):
     def __init__(self):
         super().__init__()
 
+        layout = QVBoxLayout(self)
         self.imageLabel = QLabel()
         self.imageLabel.setBackgroundRole(QPalette.Base)
         self.imageLabel.setScaledContents(True)
-        self.imageLabel.setFixedSize(800, 600)
 
         self.scrollArea = QScrollArea(self)
         self.scrollArea.setWidget(self.imageLabel)
@@ -34,9 +34,9 @@ class CardViewer(QWidget):
         self.scrollArea.setAlignment(Qt.AlignHCenter)
         self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
-        self.scrollArea.setFixedSize(800, 600)
-        self.setFixedSize(800, 600)
+        self.scrollArea.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        layout.addWidget(self.scrollArea)
+        self.adjustSize()
 
     @pyqtSlot(str, str)
     def on_set_card(self, image_path, json_path):
@@ -54,7 +54,7 @@ class CardViewer(QWidget):
 
         self.image = ImageQt(self.card_image)
         self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
-
+        self.imageLabel.setFixedSize(self.card_image.size[0], self.card_image.size[1])
         self.adjustSize()
 
         self.current_textline_idx = -1

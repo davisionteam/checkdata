@@ -84,6 +84,7 @@ class App(QMainWindow):
         left_layout.addWidget(index_selector)
 
         card_viewer = CardViewer()
+        card_viewer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         left_layout.addWidget(card_viewer)
 
         right_layout = QVBoxLayout()
@@ -117,7 +118,7 @@ class App(QMainWindow):
 
         left_widget = QWidget()
         left_widget.setLayout(left_layout)
-        left_widget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        left_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(left_widget)
 
         right_widget = QWidget()
