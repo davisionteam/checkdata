@@ -87,11 +87,14 @@ class App(QMainWindow):
         left_layout.addWidget(card_viewer)
 
         right_layout = QVBoxLayout()
-        class_editor = ClassEditor()
-        right_layout.addWidget(class_editor)
 
         textline_editor = TextLineEditor()
+        textline_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         right_layout.addWidget(textline_editor)
+
+        class_editor = ClassEditor()
+        class_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        right_layout.addWidget(class_editor)
 
         card_viewer.next_textline_handler.connect(textline_editor.on_new_textline)
         card_viewer.next_textline_handler.connect(class_editor.on_new_textline)
@@ -120,7 +123,7 @@ class App(QMainWindow):
         right_widget = QWidget()
         right_widget.setLayout(right_layout)
         # right_widget.setFixedWidth(800)
-        right_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        right_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(right_widget)
         root.adjustSize()
         self.setCentralWidget(root)

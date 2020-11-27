@@ -20,7 +20,7 @@ class TextLineEditor(QWidget):
         self.imageLabel = QLabel()
         self.imageLabel.setBackgroundRole(QPalette.Base)
         self.imageLabel.setFixedSize(1024, 128)
-        self.imageLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.imageLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.imageLabel.setScaledContents(True)
         layout = QVBoxLayout()
 
@@ -31,6 +31,7 @@ class TextLineEditor(QWidget):
         layout.addWidget(toolbar)
 
         label = QLabel('Text Line Image')
+        label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(label)
 
         self.scrollArea = QScrollArea()
@@ -38,13 +39,15 @@ class TextLineEditor(QWidget):
         self.scrollArea.setWidget(self.imageLabel)
         self.scrollArea.setVisible(False)
         self.scrollArea.setWidgetResizable(False)
-        self.scrollArea.setFixedHeight(128)
+        self.scrollArea.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         layout.addWidget(self.scrollArea)
 
         label = QLabel('Label:')
+        label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         layout.addWidget(label)
 
         self.label_text = QLineEdit("label")
+        self.label_text.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         f = self.label_text.font()
         f.setFamily('Times New Roman')
         f.setPointSize(27) # sets the size to 27
