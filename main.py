@@ -48,22 +48,17 @@ class Dataset(QObject):
 
     @pyqtSlot()
     def on_request_next_card(self):
-        if self.current_card_idx >= len(self):
+        if self.current_card_idx + 1 >= len(self):
             print('End!')
-            return None
         else:
-            self.current_card_idx += 1
-            image_path, json_path = list(map(str, self.accs[self.current_card_idx]))
-            self.new_card.emit(image_path, json_path)
+            self.on_request_card_index(self.current_card_idx + 1)
 
     @pyqtSlot()
     def on_request_prev_card(self):
-        if self.current_card_idx < 0:
+        if self.current_card_idx - 1 < 0:
             print('End!')
         else:
-            self.current_card_idx -= 1
-            image_path, json_path = list(map(str, self.accs[self.current_card_idx]))
-            self.new_card.emit(image_path, json_path)
+            self.on_request_card_index(self.current_card_idx - 1)
 
 
 class App(QMainWindow):
