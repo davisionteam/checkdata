@@ -122,7 +122,7 @@ class CardViewer(QWidget):
 
     def extract_card(self, pil_image, json_dict):
         for shape in json_dict['shapes']:
-            if shape['label'].upper() in ['CCCD_BACK', 'CCCD', 'BLX', 'BLX_BACK', 'CMND', 'CMND_BACK', 'CMCC']:
+            if shape['label'].upper() in ['CCCD_BACK', 'CCCD', 'BLX', 'BLX_BACK', 'CMND', 'CMND_BACK', 'CMCC', 'RECEIPT']:
                 points = shape['points']
                 if len(points) > 4:
                     x_min = min([int(x) for (x, y) in points])
@@ -147,8 +147,9 @@ class CardViewer(QWidget):
     def extract_shapes(self, pil_image, json_dict):
         shapes = []
         for shape in json_dict['shapes']:
-            shape = Shape(shape, pil_image)
-            shapes.append(shape)
+            if shape['label'] not in ['CCCD_BACK', 'CCCD', 'BLX', 'BLX_BACK', 'CMND', 'CMND_BACK', 'CMCC', 'RECEIPT']:
+                shape = Shape(shape, pil_image)
+                shapes.append(shape)
         return shapes
 
     def __getitem__(self, idx):
