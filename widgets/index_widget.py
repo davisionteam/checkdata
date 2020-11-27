@@ -50,5 +50,5 @@ class IndexWidget(QWidget):
     def update_card_index(self):
         index = self.dataset.current_card_idx
         self.index_line_edit.setText(f'{index:05d}')
-        image_path, _, _ = self.dataset[index]
+        image_path, *_ = self.dataset[index]
         self.path_line_edit.setText(str(image_path))

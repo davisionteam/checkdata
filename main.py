@@ -15,7 +15,7 @@ WIN_SIZE = (1024, 128)
 
 
 class Dataset(QObject):
-    new_card = pyqtSignal(str, str, str)
+    new_card = pyqtSignal(str, str)
 
     def __init__(self, acc_dir: Path):
         super().__init__()
@@ -25,8 +25,8 @@ class Dataset(QObject):
 
         self.acc_images: List[Path] = sum([sorted(list(acc_dir.glob(pattern))) for pattern in ext_list], [])
         self.acc_jsons = [image.with_suffix('.json') for image in self.acc_images]
-        self.acc_json_diff = [image.with_name(image.stem + '_checked.json') for image in self.acc_images]
-        self.accs = list(zip(self.acc_images, self.acc_jsons, self.acc_json_diff))
+        # self.acc_json_diff = [image.with_name(image.stem + '_checked.json') for image in self.acc_images]
+        self.accs = list(zip(self.acc_images, self.acc_jsons))
         # for image_path, json_path, json_diff_path in zip(self.acc_images, self.acc_jsons, self.acc_json_diff):
         #     acc_file = ImageDir(image_path, json_path, json_diff_path)
         #     if len(acc_file) > 0:
@@ -43,8 +43,8 @@ class Dataset(QObject):
     def on_request_card_index(self, index: int):
         if 0 <= index < len(self):
             self.current_card_idx = index
-            image_path, json_path, json_diff = list(map(str, self.accs[self.current_card_idx]))
-            self.new_card.emit(image_path, json_path, json_diff)
+            image_path, json_path = list(map(str, self.accs[self.current_card_idx]))
+            self.new_card.emit(image_path, json_path)
 
     @pyqtSlot()
     def on_request_next_card(self):
@@ -53,8 +53,8 @@ class Dataset(QObject):
             return None
         else:
             self.current_card_idx += 1
-            image_path, json_path, json_diff = list(map(str, self.accs[self.current_card_idx]))
-            self.new_card.emit(image_path, json_path, json_diff)
+            image_path, json_path = list(map(str, self.accs[self.current_card_idx]))
+            self.new_card.emit(image_path, json_path)
 
     @pyqtSlot()
     def on_request_prev_card(self):
@@ -62,8 +62,8 @@ class Dataset(QObject):
             print('End!')
         else:
             self.current_card_idx -= 1
-            image_path, json_path, json_diff = list(map(str, self.accs[self.current_card_idx]))
-            self.new_card.emit(image_path, json_path, json_diff)
+            image_path, json_path = list(map(str, self.accs[self.current_card_idx]))
+            self.new_card.emit(image_path, json_path)
 
 
 class App(QMainWindow):

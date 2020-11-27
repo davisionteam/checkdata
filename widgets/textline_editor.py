@@ -54,19 +54,6 @@ class TextLineEditor(QWidget):
         self.label_text.setReadOnly(False)
         layout.addWidget(self.label_text)
 
-        label = QLabel('OCR Predict:')
-        layout.addWidget(label)
-
-        self.pred_text = QLineEdit("pred")
-        f = self.pred_text.font()
-        f.setFamily('Times New Roman')
-        f.setPointSize(27) # sets the size to 27
-        f.setStyleHint(QFont.Monospace)
-        self.pred_text.setFont(f)
-        self.pred_text.setFocus()
-        self.pred_text.setReadOnly(True)
-        layout.addWidget(self.pred_text)
-
         self.setLayout(layout)
         self.adjustSize()
         self.rotate_degree = 0
@@ -99,7 +86,6 @@ class TextLineEditor(QWidget):
         self.current_textline = textline
         self.loadImage(textline.image)
         self.label_text.setText(textline.textline)
-        self.pred_text.setText(textline.predict)
 
     def on_clockwise_button_clicked(self):
         if self.pillow_image.width * self.pillow_image.height == 0:

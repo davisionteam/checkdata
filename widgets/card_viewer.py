@@ -38,26 +38,22 @@ class CardViewer(QWidget):
         self.scrollArea.setFixedSize(800, 600)
         self.setFixedSize(800, 600)
 
-    @pyqtSlot(str, str, str)
-    def on_set_card(self, image_path, json_path, json_diff_path):
+    @pyqtSlot(str, str)
+    def on_set_card(self, image_path, json_path):
         self.json_path = json_path
         self.full_image = Image.open(image_path)
         self.card_json = json.load(open(json_path, encoding='utf8'))
 
         self.card_image, self.card_location, self.M = self.extract_card(self.full_image, self.card_json)
-        self.textlines = self.extract_textlines(json_diff_path)
-        print(json_path, len(self.textlines))
-        if len(self.textlines) == 0:
+        self.shapes = self.extract_shapes(self.full_image, self.card_json)
+        print(json_path, len(self.shapes))
+        if len(self.shapes) == 0:
             print(f'Nothing to do with {image_path}')
             self.next_card_signal.emit()
             return
 
         self.image = ImageQt(self.card_image)
         self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
-        # self.imageLabel.setFixedSize(self.card_image.size[0], self.card_image.size[1])
-        # self.imageLabel.adjustSize()
-        # self.scrollArea.setFixedSize(self.imageLabel.size())
-        # self.scrollArea.adjustSize()
 
         self.adjustSize()
 
@@ -66,12 +62,12 @@ class CardViewer(QWidget):
 
     @pyqtSlot(str)
     def on_update_textline_label(self, new_text):
-        textline = self.textlines[self.current_textline_idx]
+        textline = self.shapes[self.current_textline_idx]
         textline.textline = new_text
 
     @pyqtSlot(str)
     def on_update_textline_classname(self, new_classname):
-        textline = self.textlines[self.current_textline_idx]
+        textline = self.shapes[self.current_textline_idx]
         textline.class_name = new_classname
 
     @pyqtSlot()
@@ -84,13 +80,13 @@ class CardViewer(QWidget):
 
     def _set_line_index(self, idx):
         self.save()
-        if idx >= len(self.textlines):
+        if idx >= len(self.shapes):
             self.next_card_signal.emit()
         elif idx < 0:
             self.prev_card_signal.emit()
         else:
             self.current_textline_idx = idx
-            textline = self.textlines[self.current_textline_idx]
+            textline = self.shapes[self.current_textline_idx]
             self._highlight_textline()
             self.next_textline_handler.emit(textline)
 
@@ -105,7 +101,7 @@ class CardViewer(QWidget):
             return polygon
 
         assert len(self.card_location) == 4
-        textline = self.textlines[self.current_textline_idx]
+        textline = self.shapes[self.current_textline_idx]
         textline_coords = _order_points(textline.coords)
 
         if self.M is None:
@@ -148,58 +144,18 @@ class CardViewer(QWidget):
                 return card_image, location, M
         return None, None
 
-    def extract_textlines(self, json_diff_path: Path):
-        textlines = []
-        textlines_diff = json.load(open(json_diff_path, encoding='utf8'))
-        for textline_diff in textlines_diff:
-            predict_text = textline_diff['predict_text'].strip()
-            ref = self.find_ref_by_coords(textline_diff['coords'])
-            if ref is None:
-                print(f'{textline_diff} does not have corresponding label in groundtruth')
-                continue
-
-            textline = TextLine(ref, predict_text, self.full_image)
-            textlines.append(textline)
-        return textlines
+    def extract_shapes(self, pil_image, json_dict):
+        shapes = []
+        for shape in json_dict['shapes']:
+            shape = Shape(shape, pil_image)
+            shapes.append(shape)
+        return shapes
 
     def __getitem__(self, idx):
-        return self.textlines[idx]
-
-    def find_ref_by_coords(self, coords: List) -> Optional[Dict]:
-        for shape in self.card_json['shapes']:
-            if self.is_same_coords(shape['points'], coords):
-                return shape
-        return None
-
-    def is_same_coords(self, coords1, coords2) -> bool:
-        if len(coords1) in [2, 4]:
-            coords1 = _order_points(coords1)
-
-        if len(coords2) in [2, 4]:
-            coords2 = _order_points(coords2)
-
-        if len(coords1) != len(coords2):
-            return False
-
-        if isinstance(coords1, list):
-            coords1 = flatten_coords(coords1)
-        else:
-            print('Current only support list type')
-            return False
-        if isinstance(coords2, list):
-            coords2 = flatten_coords(coords2)
-        else:
-            print('Current only support list type')
-            return False
-
-        assert len(coords1) == len(coords2)
-        for idx in range(len(coords1)):
-            if abs(coords1[idx] - coords2[idx]) > 3:
-                return False
-        return True
+        return self.shapes[idx]
 
     def __len__(self):
-        return len(self.textlines)
+        return len(self.shapes)
 
     @pyqtSlot()
     def save(self):
@@ -208,35 +164,34 @@ class CardViewer(QWidget):
                   indent=4,
                   ensure_ascii=False)
 
-class TextLine():
-    def __init__(self, ref: Dict, predict: str, image: Image.Image):
-        self.ref = ref
-        self.predict = predict
+class Shape():
+    def __init__(self, shape: Dict, image: Image.Image):
+        self.shape = shape
         self.full_image = image
 
     @property
     def textline(self) -> str:
-        return self.ref.get('value', '')
+        return self.shape.get('value', '')
 
     @textline.setter
     def textline(self, value):
         if value == '':
-            if 'value' in self.ref.keys():
-                del self.ref['value']
+            if 'value' in self.shape.keys():
+                del self.shape['value']
         else:
-            self.ref['value'] = value
+            self.shape['value'] = value
 
     @property
     def coords(self):
-        return self.ref['points']
+        return self.shape['points']
 
     @property
     def class_name(self):
-        return self.ref['label']
+        return self.shape['label']
 
     @class_name.setter
     def class_name(self, new_name):
-        self.ref['label'] = new_name
+        self.shape['label'] = new_name
 
     @property
     def image(self):
