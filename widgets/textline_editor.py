@@ -15,7 +15,6 @@ class TextLineEditor(QWidget):
     def __init__(self):
         super().__init__()
         self.image = QImage()
-        self.setFixedHeight(400)
 
         self.imageLabel = QLabel()
         self.imageLabel.setBackgroundRole(QPalette.Base)
