@@ -1,6 +1,6 @@
 from PIL import Image
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import (QLineEdit, QLabel, QMessageBox, QVBoxLayout,
                              QWidget)
 
@@ -19,6 +19,12 @@ class ClassEditor(QWidget):
 
         self.edit_text = QLineEdit(self)
         self.edit_text.textChanged.connect(self._on_text_change)
+
+        f = self.edit_text.font()
+        f.setFamily('Times New Roman')
+        f.setPointSize(27) # sets the size to 27
+        f.setStyleHint(QFont.Monospace)
+        self.edit_text.setFont(f)
         layout.addWidget(self.edit_text)
 
         self.setLayout(layout)
