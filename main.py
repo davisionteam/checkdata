@@ -111,11 +111,13 @@ class App(QMainWindow):
         ##################
         rotateAction = QAction('&Rotate', self)
         rotateAction.setShortcut('Ctrl+R')
+        rotateAction.triggered.connect(card_viewer.imageViewer.rotateImage)
         zoomInAction = QAction('&Zoom In', self)
         zoomInAction.setShortcut('Ctrl+=')
-        # zoomInAction.triggered.connect()
+        zoomInAction.triggered.connect(card_viewer.imageViewer.zoomInImage)
         zoomOutAction = QAction('&Zoom Out', self)
         zoomOutAction.setShortcut('Ctrl+-')
+        zoomOutAction.triggered.connect(card_viewer.imageViewer.zoomOutImage)
 
 
         nextImageAction = QAction('&Next Image', self)

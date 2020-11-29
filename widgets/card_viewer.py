@@ -11,6 +11,7 @@ from utils.utils import distance, _order_points, flatten_coords
 import json
 from PIL import ImageDraw
 from .shape_editor import Shape
+from .image_viewer import ImageView
 
 class CardViewer(QWidget):
 
@@ -22,20 +23,8 @@ class CardViewer(QWidget):
         super().__init__()
 
         layout = QVBoxLayout(self)
-        self.imageLabel = QLabel()
-        self.imageLabel.setBackgroundRole(QPalette.Base)
-        self.imageLabel.setScaledContents(True)
-
-        self.scrollArea = QScrollArea(self)
-        self.scrollArea.setWidget(self.imageLabel)
-        self.scrollArea.setBackgroundRole(QPalette.Dark)
-        self.scrollArea.setVisible(True)
-        self.scrollArea.setWidgetResizable(False)
-        self.scrollArea.setAlignment(Qt.AlignHCenter)
-        self.scrollArea.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.scrollArea.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.scrollArea.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        layout.addWidget(self.scrollArea)
+        self.imageViewer = ImageView()
+        layout.addWidget(self.imageViewer)
         self.adjustSize()
 
     @pyqtSlot(str, str)
@@ -52,23 +41,11 @@ class CardViewer(QWidget):
             self.next_card_signal.emit()
             return
 
-        self.image = ImageQt(self.card_image)
-        self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
-        self.imageLabel.setFixedSize(self.card_image.size[0], self.card_image.size[1])
+        self.imageViewer.setImage(self.card_image)
         self.adjustSize()
 
         self.current_textline_idx = -1
         self.on_next_textline()
-
-    @pyqtSlot(str)
-    def on_update_textline_label(self, new_text):
-        textline = self.shapes[self.current_textline_idx]
-        textline.value = new_text
-
-    @pyqtSlot(str)
-    def on_update_textline_classname(self, new_classname):
-        textline = self.shapes[self.current_textline_idx]
-        textline.label = new_classname
 
     @pyqtSlot()
     def on_next_textline(self):
@@ -117,8 +94,8 @@ class CardViewer(QWidget):
         pdraw.polygon(textline_location, fill=(200,0,0),outline=(255,0,0))
         back = Image.blend(back, poly, alpha=0.2)
 
-        self.image = ImageQt(back)
-        self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
+        self.image = back
+        self.imageViewer.setImage(self.image)
 
     def extract_card(self, pil_image, json_dict):
         for shape in json_dict['shapes']:
