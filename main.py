@@ -3,13 +3,12 @@ from pathlib import Path
 from typing import List
 
 from PyQt5.QtCore import (QEvent, QObject, Qt, pyqtSignal, pyqtSlot)
-from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMainWindow,
+from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMainWindow, QMenu, QMenuBar,
                              QSizePolicy, QVBoxLayout, QWidget)
 
 from widgets.card_viewer import CardViewer
-from widgets.class_editor import ClassEditor
 from widgets.index_widget import IndexWidget
-from widgets.textline_editor import TextLineEditor
+from widgets.shape_editor import ShapeEditor
 
 WIN_SIZE = (1024, 128)
 
@@ -63,10 +62,10 @@ class Dataset(QObject):
 
 class App(QMainWindow):
 
-    next_line_signal = pyqtSignal()
-    prev_line_signal = pyqtSignal()
-    next_card_signal = pyqtSignal()
-    prev_card_signal = pyqtSignal()
+    nextShapeSignal = pyqtSignal()
+    prevShapeSignal = pyqtSignal()
+    nextCardSignal = pyqtSignal()
+    prevCardSignal = pyqtSignal()
 
     def __init__(self, acc_dir):
         super().__init__()
@@ -84,29 +83,20 @@ class App(QMainWindow):
 
         right_layout = QVBoxLayout()
 
-        textline_editor = TextLineEditor()
-        textline_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        right_layout.addWidget(textline_editor)
+        shapeEditor = ShapeEditor()
+        right_layout.addWidget(shapeEditor)
+        card_viewer.nextShapeHandler.connect(shapeEditor.setShape)
 
-        class_editor = ClassEditor()
-        class_editor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        right_layout.addWidget(class_editor)
-
-        card_viewer.next_textline_handler.connect(textline_editor.on_new_textline)
-        card_viewer.next_textline_handler.connect(class_editor.on_new_textline)
         card_viewer.next_card_signal.connect(index_selector.update_card_index)
         card_viewer.prev_card_signal.connect(index_selector.update_card_index)
         card_viewer.next_card_signal.connect(self.dataset.on_request_next_card)
         card_viewer.prev_card_signal.connect(self.dataset.on_request_prev_card)
         self.dataset.new_card.connect(index_selector.update_card_index)
         self.dataset.new_card.connect(card_viewer.on_set_card)
-        textline_editor.on_change.connect(card_viewer.on_update_textline_label)
-        textline_editor.on_done.connect(card_viewer.on_next_textline)
-        class_editor.on_class_name_change.connect(card_viewer.on_update_textline_classname)
-        self.next_line_signal.connect(card_viewer.on_next_textline)
-        self.prev_line_signal.connect(card_viewer.on_prev_textline)
-        self.next_card_signal.connect(self.dataset.on_request_next_card)
-        self.prev_card_signal.connect(self.dataset.on_request_prev_card)
+        self.nextShapeSignal.connect(card_viewer.on_next_textline)
+        self.prevShapeSignal.connect(card_viewer.on_prev_textline)
+        self.nextCardSignal.connect(self.dataset.on_request_next_card)
+        self.prevCardSignal.connect(self.dataset.on_request_prev_card)
 
         root = QWidget()
         layout = QHBoxLayout(root)
@@ -130,16 +120,20 @@ class App(QMainWindow):
         # set the first line of the first card
         self.dataset.on_request_next_card()
 
+        # menu = QMenu('View')
+        menubar = QMenuBar()
+        self.setMenuWidget(menubar)
+
     def eventFilter(self, source, event):
         if (event.type() == QEvent.KeyPress):
             if event.key() == Qt.Key_Down:
-                self.next_line_signal.emit()
+                self.nextShapeSignal.emit()
             elif event.key() == Qt.Key_Up:
-                self.prev_line_signal.emit()
+                self.prevShapeSignal.emit()
             elif event.key() == Qt.Key_PageDown:
-                self.next_card_signal.emit()
+                self.nextCardSignal.emit()
             elif event.key() == Qt.Key_PageUp:
-                self.prev_card_signal.emit()
+                self.prevCardSignal.emit()
         return super().eventFilter(source, event)
 
 if __name__ == "__main__":

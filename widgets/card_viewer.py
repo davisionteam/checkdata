@@ -10,11 +10,11 @@ import numpy as np
 from utils.utils import distance, _order_points, flatten_coords
 import json
 from PIL import ImageDraw
-
+from .shape_editor import Shape
 
 class CardViewer(QWidget):
 
-    next_textline_handler = pyqtSignal(object)
+    nextShapeHandler = pyqtSignal(object)
     next_card_signal = pyqtSignal()
     prev_card_signal = pyqtSignal()
 
@@ -63,12 +63,12 @@ class CardViewer(QWidget):
     @pyqtSlot(str)
     def on_update_textline_label(self, new_text):
         textline = self.shapes[self.current_textline_idx]
-        textline.textline = new_text
+        textline.value = new_text
 
     @pyqtSlot(str)
     def on_update_textline_classname(self, new_classname):
         textline = self.shapes[self.current_textline_idx]
-        textline.class_name = new_classname
+        textline.label = new_classname
 
     @pyqtSlot()
     def on_next_textline(self):
@@ -88,7 +88,7 @@ class CardViewer(QWidget):
             self.current_textline_idx = idx
             textline = self.shapes[self.current_textline_idx]
             self._highlight_textline()
-            self.next_textline_handler.emit(textline)
+            self.nextShapeHandler.emit(textline)
 
     def _highlight_textline(self):
         def transform(polygon, M):
@@ -102,7 +102,7 @@ class CardViewer(QWidget):
 
         assert len(self.card_location) == 4
         textline = self.shapes[self.current_textline_idx]
-        textline_coords = _order_points(textline.coords)
+        textline_coords = _order_points(textline.points)
 
         if self.M is None:
             x_min = min([x for (x, y) in self.card_location])
@@ -164,53 +164,3 @@ class CardViewer(QWidget):
                   open(self.json_path, 'wt', encoding='utf8'),
                   indent=4,
                   ensure_ascii=False)
-
-class Shape():
-    def __init__(self, shape: Dict, image: Image.Image):
-        self.shape = shape
-        self.full_image = image
-
-    @property
-    def textline(self) -> str:
-        return self.shape.get('value', '')
-
-    @textline.setter
-    def textline(self, value):
-        if value == '':
-            if 'value' in self.shape.keys():
-                del self.shape['value']
-        else:
-            self.shape['value'] = value
-
-    @property
-    def coords(self):
-        return self.shape['points']
-
-    @property
-    def class_name(self):
-        return self.shape['label']
-
-    @class_name.setter
-    def class_name(self, new_name):
-        self.shape['label'] = new_name
-
-    @property
-    def image(self):
-        points = _order_points(self.coords)
-        if isinstance(points, list):
-            cv_image = np.array(self.full_image)
-            width = int(round((distance(points[0], points[1]) + distance(points[2], points[3])) / 2))
-            height = int(round((distance(points[0], points[3]) + distance(points[1], points[2])) / 2))
-
-            M = cv2.getPerspectiveTransform(np.float32(points), np.float32([[0, 0], [width, 0], [width, height], [0, height]]))
-            image = cv2.warpPerspective(cv_image, M, (width, height))
-
-            textline_image = Image.fromarray(image)
-        elif isinstance(points, str):
-            points = points.strip()
-            x, y, w, h = [int(item) for item in points.split()]
-            textline_image = self.full_image.crop((x, y, x + w, y + h))
-        else:
-            print('Unknow type of "coords"')
-            exit(-1)
-        return textline_image
