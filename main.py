@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 
 from PyQt5.QtCore import (QEvent, QObject, Qt, pyqtSignal, pyqtSlot)
-from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMainWindow, QMenu, QMenuBar,
+from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMainWindow, QMenu, QMenuBar, QAction, QActionGroup,
                              QSizePolicy, QVBoxLayout, QWidget)
 
 from widgets.card_viewer import CardViewer
@@ -62,11 +62,6 @@ class Dataset(QObject):
 
 class App(QMainWindow):
 
-    nextShapeSignal = pyqtSignal()
-    prevShapeSignal = pyqtSignal()
-    nextCardSignal = pyqtSignal()
-    prevCardSignal = pyqtSignal()
-
     def __init__(self, acc_dir):
         super().__init__()
         self.dataset = Dataset(acc_dir)
@@ -87,16 +82,8 @@ class App(QMainWindow):
         right_layout.addWidget(shapeEditor)
         card_viewer.nextShapeHandler.connect(shapeEditor.setShape)
 
-        card_viewer.next_card_signal.connect(index_selector.update_card_index)
-        card_viewer.prev_card_signal.connect(index_selector.update_card_index)
-        card_viewer.next_card_signal.connect(self.dataset.on_request_next_card)
-        card_viewer.prev_card_signal.connect(self.dataset.on_request_prev_card)
         self.dataset.new_card.connect(index_selector.update_card_index)
         self.dataset.new_card.connect(card_viewer.on_set_card)
-        self.nextShapeSignal.connect(card_viewer.on_next_textline)
-        self.prevShapeSignal.connect(card_viewer.on_prev_textline)
-        self.nextCardSignal.connect(self.dataset.on_request_next_card)
-        self.prevCardSignal.connect(self.dataset.on_request_prev_card)
 
         root = QWidget()
         layout = QHBoxLayout(root)
@@ -115,26 +102,44 @@ class App(QMainWindow):
         self.setCentralWidget(root)
         self.adjustSize()
         # self.showMaximized()
-        self.installEventFilter(self)
 
         # set the first line of the first card
         self.dataset.on_request_next_card()
 
-        # menu = QMenu('View')
-        menubar = QMenuBar()
-        self.setMenuWidget(menubar)
+        ##################
+        # Init Menubar
+        ##################
+        rotateAction = QAction('&Rotate', self)
+        rotateAction.setShortcut('Ctrl+R')
+        zoomInAction = QAction('&Zoom In', self)
+        zoomInAction.setShortcut('Ctrl+=')
+        # zoomInAction.triggered.connect()
+        zoomOutAction = QAction('&Zoom Out', self)
+        zoomOutAction.setShortcut('Ctrl+-')
 
-    def eventFilter(self, source, event):
-        if (event.type() == QEvent.KeyPress):
-            if event.key() == Qt.Key_Down:
-                self.nextShapeSignal.emit()
-            elif event.key() == Qt.Key_Up:
-                self.prevShapeSignal.emit()
-            elif event.key() == Qt.Key_PageDown:
-                self.nextCardSignal.emit()
-            elif event.key() == Qt.Key_PageUp:
-                self.prevCardSignal.emit()
-        return super().eventFilter(source, event)
+
+        nextImageAction = QAction('&Next Image', self)
+        nextImageAction.setShortcut(Qt.Key_PageDown)
+        nextImageAction.triggered.connect(self.dataset.on_request_next_card)
+        prevImageAction = QAction('&Previous Image', self)
+        prevImageAction.setShortcut(Qt.Key_PageUp)
+        prevImageAction.triggered.connect(self.dataset.on_request_prev_card)
+        nextShapeAction = QAction('&Next Shape', self)
+        nextShapeAction.setShortcut(Qt.Key_Down)
+        nextShapeAction.triggered.connect(card_viewer.on_next_textline)
+        prevShapeAction = QAction('&Previous Shape', self)
+        prevShapeAction.setShortcut(Qt.Key_Up)
+        prevShapeAction.triggered.connect(card_viewer.on_prev_textline)
+
+        mainMenu = self.menuBar()
+
+        fileMenu = mainMenu.addMenu('&File')
+
+        viewMenu = mainMenu.addMenu('&View')
+        viewMenu.addActions([nextShapeAction, prevShapeAction])
+        viewMenu.addActions([nextImageAction, prevImageAction])
+        viewMenu.addSeparator()
+        viewMenu.addActions([rotateAction, zoomInAction, zoomOutAction])
 
 if __name__ == "__main__":
     app = QApplication([])
