@@ -112,13 +112,15 @@ class App(QMainWindow):
         rotateAction = QAction('&Rotate', self)
         rotateAction.setShortcut('Ctrl+R')
         rotateAction.triggered.connect(card_viewer.imageViewer.rotateImage)
+        rotateAction.triggered.connect(shapeEditor.imageField.image.rotateImage)
         zoomInAction = QAction('&Zoom In', self)
         zoomInAction.setShortcut('Ctrl+=')
         zoomInAction.triggered.connect(card_viewer.imageViewer.zoomInImage)
+        zoomInAction.triggered.connect(shapeEditor.imageField.image.zoomInImage)
         zoomOutAction = QAction('&Zoom Out', self)
         zoomOutAction.setShortcut('Ctrl+-')
         zoomOutAction.triggered.connect(card_viewer.imageViewer.zoomOutImage)
-
+        zoomOutAction.triggered.connect(shapeEditor.imageField.image.zoomOutImage)
 
         nextImageAction = QAction('&Next Image', self)
         nextImageAction.setShortcut(Qt.Key_PageDown)
