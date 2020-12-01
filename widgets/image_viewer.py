@@ -1,66 +1,84 @@
 from PIL import Image
 from PIL.ImageQt import ImageQt
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
-from PyQt5.QtGui import QPalette, QPixmap
-from PyQt5.QtWidgets import (QLabel, QScrollArea, QSizePolicy, QVBoxLayout,
-                             QWidget)
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QPoint
+from PyQt5.QtGui import QPalette, QPixmap, QWheelEvent, QTransform, QMouseEvent
+from PyQt5.QtWidgets import (QLabel, QSizePolicy, QVBoxLayout,
+                             QWidget, QGraphicsScene, QGraphicsView)
+from typing import Optional
 
-class ImageView(QWidget):
+
+class ImageView(QGraphicsView):
 
     def __init__(self):
         super().__init__()
-        layout = QVBoxLayout(self)
+        self.setScene(QGraphicsScene(0, 0, 600, 600))
+        self.viewport().installEventFilter(self)
+        self.setMouseTracking(True)
+        self.modifier = Qt.NoModifier
+        self.zoomSpeed = 0.1
+        self.isMoving = False
 
-        self.imageLabel = QLabel()
-        self.imageLabel.setBackgroundRole(QPalette.Base)
-        self.imageLabel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.imageLabel.setScaledContents(False)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.horizontalScrollBar().disconnect()
+        self.verticalScrollBar().disconnect()
 
-        self.scrollArea = QScrollArea()
-        self.scrollArea.setBackgroundRole(QPalette.Dark)
-        self.scrollArea.setWidget(self.imageLabel)
-        self.scrollArea.setWidgetResizable(False)
-        self.scrollArea.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        layout.addWidget(self.scrollArea)
+        # Set Anchors
+        self.setTransformationAnchor(QGraphicsView.NoAnchor)
+        self.setResizeAnchor(QGraphicsView.NoAnchor)
 
-        self.rotateDegree = 0
-        self.scaleFactor = 1.0
+    def wheelEvent(self, event: QWheelEvent):
+        modifier = event.modifiers()
+        if modifier == self.modifier:
+            # Save the scene pos
+            oldPos = self.mapToScene(event.pos())
+
+            # Zoom
+            if event.angleDelta().y() > 0:
+                zoomFactor = 1 + self.zoomSpeed
+            else:
+                zoomFactor = 1 - self.zoomSpeed
+
+            self.scale(zoomFactor, zoomFactor)
+
+            # Get the new position
+            newPos = self.mapToScene(event.pos())
+
+            # Move scene to old position
+            delta = newPos - oldPos
+            print(delta)
+            self.translate(delta.x(), delta.y())
+
+    def mouseMoveEvent(self, event: QMouseEvent):
+        self.__startPos: Optional[QPoint]
+        if event.buttons() == Qt.LeftButton:
+            if self.__startPos is not None:
+                newPos = self.mapToScene(event.pos())
+                delta = newPos - self.__startPos
+                self.translate(delta.x(), delta.y())
+            self.__startPos = self.mapToScene(event.pos())
+        else:
+            self.__startPos = None
 
     @pyqtSlot(object)
     def setImage(self, pillowImage):
         if pillowImage.size[0] * pillowImage.size[1] == 0:
             print(f'Width or height is 0. WxH = {pillowImage.size[0]}x{pillowImage.size[1]}')
             return
-
-        self.scaleFactor = 1.0
-        self.rotateDegree = 0.0
-        self.rawImage = pillowImage
-        self.transformedImage = self.rawImage
-        self._updateImage()
+        self.image = ImageQt(pillowImage)
+        self.scene().clear()
+        self.scene().update(0, 0, pillowImage.size[0], pillowImage.size[1])
+        self.scene().addPixmap(QPixmap.fromImage(self.image))
+        self.adjustSize()
 
     @pyqtSlot()
     def rotateImage(self):
-        self.rotateDegree += 90
-        self._updateImage()
+        self.rotate(90)
 
     @pyqtSlot()
     def zoomInImage(self):
-        self.scaleFactor = min(self.scaleFactor + 0.25, 3.0)
-        self._updateImage()
+        self.scale(1 + self.zoomSpeed, 1 + self.zoomSpeed)
 
     @pyqtSlot()
     def zoomOutImage(self):
-        self.scaleFactor = max(self.scaleFactor - 0.25, 0.25)
-        self._updateImage()
-
-    def _updateImage(self):
-        image_w, image_h = self.rawImage.size
-        image_w = self.scaleFactor * image_w
-        image_h = self.scaleFactor * image_h
-        image_w, image_h = int(image_w), int(image_h)
-
-        self.transformedImage = self.rawImage.resize((image_w, image_h), Image.ANTIALIAS)
-        self.transformedImage = self.transformedImage.rotate(self.rotateDegree, expand=True)
-        self.image = ImageQt(self.transformedImage)
-        self.imageLabel.setPixmap(QPixmap.fromImage(self.image))
-        self.imageLabel.setFixedSize(self.transformedImage.size[0], self.transformedImage.size[1])
+        self.scale(1 - self.zoomSpeed, 1 - self.zoomSpeed)

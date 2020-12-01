@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt, pyqtSlot, pyqtSignal
-from PyQt5.QtWidgets import QWidget, QLabel, QScrollArea, QSizePolicy, QVBoxLayout
+from PyQt5.QtWidgets import QWidget, QLabel, QSizePolicy, QVBoxLayout
 from PyQt5.QtGui import QPixmap, QPalette
 from PIL import Image
 from PIL.ImageQt import ImageQt

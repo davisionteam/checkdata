@@ -6,7 +6,7 @@ from PIL.ImageQt import ImageQt
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt
 from PyQt5.QtGui import QFont, QImage, QKeySequence, QPalette, QPixmap
 from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QLineEdit, QPushButton, QGroupBox,
-                             QScrollArea, QShortcut, QSizePolicy, QVBoxLayout,
+                             QShortcut, QSizePolicy, QVBoxLayout,
                              QWidget, QFrame)
 from utils.utils import distance, _order_points, flatten_coords
 import numpy as np

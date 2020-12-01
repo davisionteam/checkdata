@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List
 
 from PyQt5.QtCore import (QEvent, QObject, Qt, pyqtSignal, pyqtSlot)
-from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMainWindow, QMenu, QMenuBar, QAction, QActionGroup,
+from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QMainWindow, QMenu, QMenuBar, QAction,
                              QSizePolicy, QVBoxLayout, QWidget)
 
 from widgets.card_viewer import CardViewer
