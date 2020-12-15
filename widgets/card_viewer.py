@@ -88,14 +88,8 @@ class CardViewer(QWidget):
         else:
             textline_location = transform(textline_coords, self.M)
 
-        back = self.card_image.copy()
-        poly = self.card_image.copy()
-        pdraw = ImageDraw.Draw(poly)
-        pdraw.polygon(textline_location, fill=(200,0,0),outline=(255,0,0))
-        back = Image.blend(back, poly, alpha=0.2)
-
-        self.image = back
-        self.imageViewer.setImage(self.image)
+        self.imageViewer.setImage(self.card_image)
+        self.imageViewer.highlight(textline_location)
 
     def extract_card(self, pil_image, json_dict):
         for shape in json_dict['shapes']:

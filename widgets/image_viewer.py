@@ -1,7 +1,7 @@
 from PIL import Image
 from PIL.ImageQt import ImageQt
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QPoint
-from PyQt5.QtGui import QPalette, QPixmap, QWheelEvent, QTransform, QMouseEvent
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QPointF, QPoint
+from PyQt5.QtGui import QPalette, QPixmap, QWheelEvent, QTransform, QMouseEvent, QPolygonF, QColor
 from PyQt5.QtWidgets import (QLabel, QSizePolicy, QVBoxLayout,
                              QWidget, QGraphicsScene, QGraphicsView)
 from typing import Optional
@@ -27,6 +27,8 @@ class ImageView(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.NoAnchor)
         self.setResizeAnchor(QGraphicsView.NoAnchor)
 
+        self.highlighted_polygon = None
+
     def wheelEvent(self, event: QWheelEvent):
         modifier = event.modifiers()
         if modifier == self.modifier:
@@ -46,7 +48,6 @@ class ImageView(QGraphicsView):
 
             # Move scene to old position
             delta = newPos - oldPos
-            print(delta)
             self.translate(delta.x(), delta.y())
 
     def mouseMoveEvent(self, event: QMouseEvent):
@@ -82,3 +83,15 @@ class ImageView(QGraphicsView):
     @pyqtSlot()
     def zoomOutImage(self):
         self.scale(1 - self.zoomSpeed, 1 - self.zoomSpeed)
+
+    @pyqtSlot(list)
+    def highlight(self, polygon):
+        polygon = list(map(lambda p: QPointF(p[0], p[1]), polygon))
+        polygon = QPolygonF(polygon)
+        self.highlighted_polygon = self.scene().addPolygon(polygon, QColor(255, 0, 0, 200), QColor(255, 0, 0, 100))
+
+    @pyqtSlot()
+    def unhighlight(self):
+        if self.highlighted_polygon is not None:
+            self.scene().removeItem(self.highlighted_polygon)
+            self.highlighted_polygon = None
