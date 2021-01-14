@@ -19,7 +19,7 @@ names:
 
 # Labels to be ignored from mapping
 ignore:
-  - L
+  # - L
 
 # Defining labels mapped based on a specific region name
 depend:
@@ -28,6 +28,7 @@ depend:
     - K_SC
     - BARCODE
     - ID
+    - L
   R02:
     - T_BI
     - BOC1

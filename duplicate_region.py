@@ -12,20 +12,28 @@ from PIL import Image
 def compute_intersection_ratio(polyA, polyB):
     ratio = 0.
     polyA = geometry.Polygon(polyA)
-    polyB = geometry.Polygon(polyB)
-    if polyA.intersects(polyB):
-        ratio = polyA.intersection(polyB).area / polyB.area
+    if len(polyB) == 4:
+        polyB = geometry.Polygon(polyB)
+        if polyA.intersects(polyB):
+            ratio = polyA.intersection(polyB).area / polyB.area
+    elif len(polyB) == 2:
+        line = geometry.LineString(polyB)
+        if line.intersection(polyA).within(polyA):
+            ratio = 1.0
     return ratio
 
 
 def order_points(pts):
-    rect = np.zeros((4, 2), dtype="float32")
-    s = np.array(pts).sum(axis=1)
-    rect[0] = pts[np.argmin(s)]
-    rect[2] = pts[np.argmax(s)]
-    diff = np.diff(pts, axis=1)
-    rect[1] = pts[np.argmin(diff)]
-    rect[3] = pts[np.argmax(diff)]
+    if len(pts) == 4:
+        rect = np.zeros((4, 2), dtype="float32")
+        s = np.array(pts).sum(axis=1)
+        rect[0] = pts[np.argmin(s)]
+        rect[2] = pts[np.argmax(s)]
+        diff = np.diff(pts, axis=1)
+        rect[1] = pts[np.argmin(diff)]
+        rect[3] = pts[np.argmax(diff)]
+    else:
+        rect = pts
     return rect
 
 
@@ -81,11 +89,12 @@ def map_content(region_ref, region_new, json_ref):
             dst_array = cv2.perspectiveTransform(np.array([src_array]), M).squeeze(0)
             dst = dst_array.tolist()
 
-            dst_shape = copy.deepcopy(shape)
+            dst_shape = shape
             dst_shape['points'] = dst
             post_process_shape(dst_shape)
             new_shapes.append(dst_shape)
 
+    json_ref['shapes'] = [shape for shape in json_ref['shapes'] if shape not in new_shapes]
     return new_shapes
 
 
@@ -147,7 +156,7 @@ if __name__ == "__main__":
 
     json_ref = json.load(open(args.ref_json, 'rt'))
 
-    if 'ignore' in region_config.keys():
+    if region_config.get('ignore', None) is not None:
         json_ref['shapes'] = [shape for shape in json_ref['shapes'] if shape['label'] not in region_config['ignore']]
 
     json_dir = Path(args.json_dir)
