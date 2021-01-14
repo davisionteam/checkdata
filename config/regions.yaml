@@ -17,5 +17,29 @@ names:
   - R15
   - R16
 
+# Labels to be ignored from mapping
 ignore:
   - L
+
+# Defining labels mapped based on a specific region name
+depend:
+  R01:
+    - T_CI
+    - K_SC
+    - BARCODE
+    - ID
+  R02:
+    - T_BI
+    - BOC1
+    - BOC2
+  R03:
+    - VT_PHONE
+    - VT_WEB
+  R04:
+    - NOTE1
+    - NOTE2
+    - NOTE3
+  R05:
+    - VT_LOGO
+  R16:
+    - LOGO
