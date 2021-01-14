@@ -41,12 +41,10 @@ def find_shape(label_name: str, shapes: List[Dict]) -> Union[Dict, List[Dict]]:
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument('ref_json', type=str, help='Reference json file which will be duplicated for each image')
+    parser.add_argument('region_path', type=str, default=None, help='Path to the file containing region configurations')
     parser.add_argument('json_dir', type=str,
                         help='Directory where the frames are located in')
-    parser.add_argument('region_path', type=str, default=None, help='Path to the file containing region configurations')
     parser.add_argument('--ext', default='jpg', help='Image extension')
-    parser.add_argument('--ignore', '-i', nargs='*',
-                        default=[], help='Labels to be ignored')
     args = parser.parse_args()
 
     region_path = Path(args.region_path)
@@ -76,6 +74,7 @@ if __name__ == "__main__":
         dst: Optional[List[Tuple[float]]] = None
 
         region_news = [shape for shape in json_new['shapes'] if shape['label'] in region_config['names']]
+        json_new['shapes'] = copy.deepcopy(region_news)
         for region_new in region_news:
             found = False
             for region_ref in json_ref['shapes']:
@@ -104,8 +103,8 @@ if __name__ == "__main__":
                         dst_shape['points'] = dst
 
                         json_new['shapes'].append(dst_shape)
-            image_path = json_path.with_suffix(f'.{args.ext}')
-            json_new['imagePath'] = image_path.name
-            json_new['imageWidth'], json_new['imageHeight'] = Image.open(image_path).size
-            json_new['imageData'] = None
-            json.dump(json_new, open(json_path, 'wt', encoding='utf8'), ensure_ascii=False, indent=4)
+        image_path = json_path.with_suffix(f'.{args.ext}')
+        json_new['imagePath'] = image_path.name
+        json_new['imageWidth'], json_new['imageHeight'] = Image.open(image_path).size
+        json_new['imageData'] = None
+        json.dump(json_new, open(json_path, 'wt', encoding='utf8'), ensure_ascii=False, indent=4)
