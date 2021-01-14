@@ -36,7 +36,7 @@ depend:
   R03:
     - VT_PHONE
     - VT_WEB
-  R04:
+  R04_A:
     - NOTE1
     - NOTE2
     - NOTE3
