@@ -89,12 +89,11 @@ def map_content(region_ref, region_new, json_ref):
             dst_array = cv2.perspectiveTransform(np.array([src_array]), M).squeeze(0)
             dst = dst_array.tolist()
 
-            dst_shape = shape
+            dst_shape = copy.deepcopy(shape)
             dst_shape['points'] = dst
             post_process_shape(dst_shape)
             new_shapes.append(dst_shape)
 
-    json_ref['shapes'] = [shape for shape in json_ref['shapes'] if shape not in new_shapes]
     return new_shapes
 
 
