@@ -1,6 +1,7 @@
 import copy
 import json
 from argparse import ArgumentParser
+from json.decoder import JSONDecoder
 from pathlib import Path
 from typing import List, Optional, Tuple, Dict, Union
 import cv2
@@ -9,126 +10,175 @@ import numpy as np
 from PIL import Image
 
 
-def compute_intersection_ratio(polyA, polyB):
-    ratio = 0.
-    polyA = geometry.Polygon(polyA)
-    if len(polyB) == 4:
-        polyB = geometry.Polygon(polyB)
-        if polyA.intersects(polyB):
-            ratio = polyA.intersection(polyB).area / polyB.area
-    elif len(polyB) == 2:
-        line = geometry.LineString(polyB)
-        if line.intersection(polyA).within(polyA):
-            ratio = 1.0
-    return ratio
-
-
-def order_points(pts):
-    if len(pts) == 4:
+def order_points(points):
+    if len(points) == 4:
         rect = np.zeros((4, 2), dtype="float32")
-        s = np.array(pts).sum(axis=1)
-        rect[0] = pts[np.argmin(s)]
-        rect[2] = pts[np.argmax(s)]
-        diff = np.diff(pts, axis=1)
-        rect[1] = pts[np.argmin(diff)]
-        rect[3] = pts[np.argmax(diff)]
+        s = np.array(points).sum(axis=1)
+        rect[0] = points[np.argmin(s)]
+        rect[2] = points[np.argmax(s)]
+        diff = np.diff(points, axis=1)
+        rect[1] = points[np.argmin(diff)]
+        rect[3] = points[np.argmax(diff)]
     else:
-        rect = pts
+        rect = points
     return rect
 
 
-def find_shape(label_name: str, shapes: List[Dict]) -> Union[Dict, List[Dict]]:
-    results: List[Dict] = []
-    for shape in shapes:
-        if shape['label'] == label_name:
-            results.append(shape)
+class Shape():
+    def __init__(self, shape):
+        self.label = shape['label']
+        self.points = shape['points']
+        self.type = shape['shape_type']
+        self.group_id = shape['group_id']
+        self.flags = shape['flags']
 
-    return results
+    def __repr__(self) -> str:
+        return f'Shape({self.label}, {self.points})'
 
-
-def to_polygon(shape):
-    if len(shape['points']) == 2 and shape['shape_type'] == 'rectangle':
-        p1, p2 = shape['points']
-        x1 = min(p1[0], p2[0])
-        y1 = min(p1[1], p2[1])
-        x2 = max(p1[0], p2[0])
-        y2 = max(p1[1], p2[1])
-        shape['points'] = [
-            [x1, y1],
-            [x2, y1],
-            [x2, y2],
-            [x1, y2],
-        ]
-        shape['shape_type'] = 'polygon'
-
-
-def post_process_shape(shape):
-    if len(shape['points']) == 4 and shape['shape_type'] == 'rectangle':
-        shape['shape_type'] = 'polygon'
+    def is_child(self, parent: 'Shape'):
+        ratio = 0.
+        polyA = geometry.Polygon(parent.points)
+        if len(self.points) == 4:
+            polyB = geometry.Polygon(self.points)
+            if polyA.intersects(polyB):
+                ratio = polyA.intersection(polyB).area / polyB.area
+        elif len(self.points) == 2:
+            line = geometry.LineString(self.points)
+            if line.intersection(polyA).within(polyA):
+                ratio = 1.0
+        return ratio >= 0.6
 
 
-def map_content(region_ref, region_new, json_ref):
-    region_src = order_points(region_ref['points'])
-    region_dst = order_points(region_new['points'])
+    def astype(self, othertype):
+        assert othertype in ['line', 'polygon', 'rectangle']
+        if len(self.points) == 2 and self.type == 'rectangle' and othertype == 'polygon':
+            p1, p2 = self.points
+            x1 = min(p1[0], p2[0])
+            y1 = min(p1[1], p2[1])
+            x2 = max(p1[0], p2[0])
+            y2 = max(p1[1], p2[1])
+            self.points = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
+            self.type = othertype
+        else:
+            raise ValueError()
 
-    src_array = np.array(region_src, np.float32).reshape(-1, 2)
-    dst_array = np.array(region_dst, np.float32).reshape(-1, 2)
-    M: np.ndarray = cv2.getPerspectiveTransform(src_array, dst_array)
+    def find_transform(self, other: 'Shape'):
+        assert len(self.points) == 4 and len(other.points) == 4
 
-    new_shapes = []
+        region_src = order_points(self.points)
+        region_dst = order_points(other.points)
 
-    for shape in json_ref['shapes']:
-        if shape['label'] == region_new['label']:
-            continue
+        src_array = np.array(region_src, np.float32).reshape(-1, 2)
+        dst_array = np.array(region_dst, np.float32).reshape(-1, 2)
+        M: np.ndarray = cv2.getPerspectiveTransform(src_array, dst_array)
+        return M
 
-        to_polygon(shape)
-        shape_points = order_points(shape['points'])
-        ratio = compute_intersection_ratio(region_src, shape_points)
-        if ratio >= 0.6:
-            src_array = np.array(shape_points, dtype=np.float32).reshape(-1, 2)
-            dst_array = cv2.perspectiveTransform(np.array([src_array]), M).squeeze(0)
-            dst = dst_array.tolist()
-
-            dst_shape = copy.deepcopy(shape)
-            dst_shape['points'] = dst
-            post_process_shape(dst_shape)
-            new_shapes.append(dst_shape)
-
-    return new_shapes
+    def map(self, transform: np.ndarray):
+        src_points = order_points(self.points)
+        src_array = np.array(src_points, dtype=np.float32).reshape(-1, 2)
+        dst_array = cv2.perspectiveTransform(np.array([src_array]), transform).squeeze(0)
+        dst = dst_array.tolist()
+        return Shape({
+            'label': self.label,
+            'points': dst,
+            'shape_type': self.type,
+            'flags': self.flags,
+            'group_id': self.group_id
+        })
 
 
-def map_based(region_ref, region_new, json_ref, depending_items: List[str]):
+class Annotation():
+    def __init__(self, image_path, image_height, image_width, shapes):
+        self.image_path = image_path
+        self.image_width = image_width
+        self.image_height = image_height
+        self.shapes = list(map(Shape, shapes))
 
-    if len(depending_items) == 0:
-        return []
+    def __iter__(self):
+        for shape in self.shapes:
+            yield shape
 
-    region_src = order_points(region_ref['points'])
-    region_dst = order_points(region_new['points'])
+    def __len__(self):
+        return len(self.shapes)
 
-    src_array = np.array(region_src, np.float32).reshape(-1, 2)
-    dst_array = np.array(region_dst, np.float32).reshape(-1, 2)
-    M: np.ndarray = cv2.getPerspectiveTransform(src_array, dst_array)
+    def keep_labels(self, labels: List[str]):
+        self.shapes = [shape for shape in self.shapes if shape.label in labels]
 
-    new_shapes = []
+    def remove_labels(self, labels: List[str]):
+        self.shapes = [shape for shape in self.shapes if shape.label not in labels]
 
-    for shape in json_ref['shapes']:
-        if shape['label'] == region_new['label']:
-            continue
+    @classmethod
+    def parse_from_labelme(cls, json_path):
+        json_dict = json.load(open(json_path, 'rt'))
+        return cls(json_dict['imagePath'],
+                   json_dict['imageHeight'],
+                   json_dict['imageWidth'],
+                   json_dict['shapes'])
 
-        if shape['label'] in depending_items:
-            to_polygon(shape)
-            shape_points = order_points(shape['points'])
+    def __repr__(self) -> str:
+        shapes = self.shapes[:5]
+        repr = f'Annotation({self.image_path}, {self.image_width}x{self.image_height}, {len(self.shapes)}):\n'
+        for shape in shapes:
+            repr += f'\t{shape.__repr__()}\n'
+        if len(shapes) > 5:
+            repr += '...\n'
+        return repr
 
-            src_array = np.array(shape_points, dtype=np.float32).reshape(-1, 2)
-            dst_array = cv2.perspectiveTransform(np.array([src_array]), M).squeeze(0)
-            dst = dst_array.tolist()
 
-            dst_shape = copy.deepcopy(shape)
-            dst_shape['points'] = dst
-            post_process_shape(dst_shape)
-            new_shapes.append(dst_shape)
+    def find(self, labels: List[str], first: bool = False):
+        results: List[Shape] = []
+        for shape in self.shapes:
+            if shape.label in labels:
+                results.append(shape)
 
-    return new_shapes
+        if len(results) == 0 and first:
+            return None
+        elif first:
+            return results[0]
+        else:
+            return results
+
+    def find_childs(self, ref_shape):
+        childs: List[Shape] = [shape for shape in self.shapes if shape.is_child(ref_shape) and shape != ref_shape]
+        return childs
+
+    def add_shapes(self, shapes: List[Shape]):
+        self.shapes.extend(shapes)
+
+    def remove_shapes(self, shapes: List[Shape]):
+        self.shapes = [shape for shape in self.shapes if shape not in shapes]
+
+    def to_json(self, path: Path):
+        # print(json.dumps(anno_new.__dict__, default=serializer))
+        json.dump(self, open(path, 'wt', encoding='utf8'), ensure_ascii=False, indent=4, default=labelme_serializer)
+
+
+def labelme_serializer(obj):
+    """JSON serializer for objects not serializable by default json code"""
+
+    if isinstance(obj, Annotation):
+        d = {
+            'version': '4.5.6',
+            'flags': {},
+            'shapes': obj.shapes,
+            'imageData': None,
+            'imagePath': obj.image_path,
+            'imageHeight': obj.image_height,
+            'imageWidth': obj.image_width,
+        }
+        return d
+
+    if isinstance(obj, Shape):
+        d = {
+            'label': obj.label,
+            'points': obj.points,
+            "group_id": obj.group_id,
+            "shape_type": obj.type,
+            "flags": obj.flags,
+        }
+        return d
+
+    return obj.__dict__
 
 
 if __name__ == "__main__":
@@ -153,39 +203,51 @@ if __name__ == "__main__":
 
     assert 'names' in region_config.keys()
 
-    json_ref = json.load(open(args.ref_json, 'rt'))
-
+    back_anno_ref: Annotation = Annotation.parse_from_labelme(args.ref_json)
     if region_config.get('ignore', None) is not None:
-        json_ref['shapes'] = [shape for shape in json_ref['shapes'] if shape['label'] not in region_config['ignore']]
+        back_anno_ref.remove_labels(region_config['ignore'])
 
     json_dir = Path(args.json_dir)
     for json_path in json_dir.glob(f'*.json'):
         print(f'Processing {json_path}')
-        json_new = json.load(open(json_path, 'rt'))
+        anno_ref: Annotation = copy.deepcopy(back_anno_ref)
+        anno_new: Annotation = Annotation.parse_from_labelme(json_path)
 
-        src: Optional[List[Tuple[float]]] = None
-        dst: Optional[List[Tuple[float]]] = None
+        region_news = anno_new.find(region_config['names'])
+        if len(region_news) == 0:
+            print('Empty region annotations!')
+            continue
 
-        region_news = [shape for shape in json_new['shapes'] if shape['label'] in region_config['names']]
-        json_new['shapes'] = copy.deepcopy(region_news)
+        anno_new.keep_labels(region_config['names'])
+
         for region_new in region_news:
-            for region_ref in json_ref['shapes']:
-                if region_ref['label'] != region_new['label']:
+            region_ref: Shape = anno_ref.find([region_new.label], first=True)
+            if region_ref is None:
+                print(f'Not found corresponding region name = {region_new.label} annotation in reference. Skip')
+                continue
+
+            transform = region_ref.find_transform(region_new)
+            region_ref_childs = anno_ref.find_childs(region_ref)
+            region_new_childs = [child.map(transform) for child in region_ref_childs]
+            anno_new.add_shapes(region_new_childs)
+            # remove to avoid duplication
+            anno_ref.remove_shapes(region_ref_childs)
+
+        if 'depend' in region_config.keys():
+            dependence = region_config['depend']
+            for depend_region_name, depend_labels in dependence.items():
+                region_ref = anno_ref.find(depend_region_name, first=True)
+                if region_ref is None:
+                    print(f'Unknow depend region name in reference, name = {depend_region_name}. Skip!')
                     continue
-                new_shapes = map_content(region_ref, region_new, json_ref)
-                json_new['shapes'].extend(new_shapes)
+                region_new = anno_new.find(depend_region_name, first=True)
+                if region_new is None:
+                    print(f'Unknow depend region name in new, name = {depend_region_name}. Skip!')
+                    continue
+                transform = region_ref.find_transform(region_new)
+                shapes = anno_ref.find(depend_labels)
+                mapped_shapes = [shape.map(transform) for shape in shapes]
+                anno_new.add_shapes(mapped_shapes)
+                anno_ref.remove_shapes(shapes)
 
-                if 'depend' in region_config.keys():
-                    dependence = region_config['depend']
-                    for depend_region_name, depend_labels in dependence.items():
-                        if depend_region_name != region_ref['label']:
-                            continue
-                        new_shapes = map_based(region_ref, region_new, json_ref, depend_labels)
-                        json_new['shapes'].extend(new_shapes)
-
-
-        image_path = json_path.with_suffix(f'.{args.ext}')
-        json_new['imagePath'] = image_path.name
-        json_new['imageWidth'], json_new['imageHeight'] = Image.open(image_path).size
-        json_new['imageData'] = None
-        json.dump(json_new, open(json_path, 'wt', encoding='utf8'), ensure_ascii=False, indent=4)
+        anno_new.to_json(json_path)
