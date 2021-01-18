@@ -24,6 +24,7 @@
         "R01": [
             "T_CI",
             "K_SC",
+            "V_SC",
             "BARCODE",
             "ID",
             "L"
