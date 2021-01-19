@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 from pathlib import Path
 import cv2
 import numpy as np
-from utils.utils import distance, _order_points, flatten_coords
+from utils.utils import distance, _order_points, flatten_coords, transform
 import json
 from PIL import ImageDraw
 from .shape_editor import Shape
@@ -68,15 +68,6 @@ class CardViewer(QWidget):
             self.nextShapeHandler.emit(textline)
 
     def _highlight_textline(self):
-        def transform(polygon, M):
-            polygon = list(polygon)
-            for i, pts in enumerate(polygon):
-                v = [pts[0], pts[1], 1]
-                x = (M[0][0] * v[0] + M[0][1] * v[1] + M[0][2]) / (M[2][0] * v[0] + M[2][1] * v[1] + M[2][2])
-                y = (M[1][0] * v[0] + M[1][1] * v[1] + M[1][2]) / (M[2][0] * v[0] + M[2][1] * v[1] + M[2][2])
-                polygon[i] = (int(x), int(y))
-            return polygon
-
         assert len(self.card_location) == 4
         textline = self.shapes[self.current_textline_idx]
         textline_coords = _order_points(textline.points)
