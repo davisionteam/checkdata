@@ -1,3 +1,4 @@
+from data import Dataset
 import sys
 from pathlib import Path
 from typing import List
@@ -13,63 +14,16 @@ from widgets.shape_editor import ShapeEditor
 WIN_SIZE = (1024, 128)
 
 
-class Dataset(QObject):
-    new_card = pyqtSignal(str, str)
-
-    def __init__(self, acc_dir: Path):
-        super().__init__()
-        ext_list = ['jpg', 'jpeg', 'png']
-        ext_list.extend([x.upper() for x in ext_list])
-        ext_list = [f'**/*.{ext}' for ext in ext_list]
-
-        self.acc_images: List[Path] = sum([sorted(list(acc_dir.glob(pattern))) for pattern in ext_list], [])
-        self.acc_jsons = [image.with_suffix('.json') for image in self.acc_images]
-        # self.acc_json_diff = [image.with_name(image.stem + '_checked.json') for image in self.acc_images]
-        self.accs = list(zip(self.acc_images, self.acc_jsons))
-        # for image_path, json_path, json_diff_path in zip(self.acc_images, self.acc_jsons, self.acc_json_diff):
-        #     acc_file = ImageDir(image_path, json_path, json_diff_path)
-        #     if len(acc_file) > 0:
-        #         self.accs.append(acc_file)
-        self.current_card_idx = -1
-
-    def __getitem__(self, idx):
-        return self.accs[idx]
-
-    def __len__(self):
-        return len(self.accs)
-
-    @pyqtSlot(int)
-    def on_request_card_index(self, index: int):
-        if 0 <= index < len(self):
-            self.current_card_idx = index
-            image_path, json_path = list(map(str, self.accs[self.current_card_idx]))
-            self.new_card.emit(image_path, json_path)
-
-    @pyqtSlot()
-    def on_request_next_card(self):
-        if self.current_card_idx + 1 >= len(self):
-            print('End!')
-        else:
-            self.on_request_card_index(self.current_card_idx + 1)
-
-    @pyqtSlot()
-    def on_request_prev_card(self):
-        if self.current_card_idx - 1 < 0:
-            print('End!')
-        else:
-            self.on_request_card_index(self.current_card_idx - 1)
-
-
 class App(QMainWindow):
 
-    def __init__(self, acc_dir):
+    def __init__(self, label_dir: Path):
         super().__init__()
-        self.dataset = Dataset(acc_dir)
+        self.dataset = Dataset(label_dir)
 
         left_layout = QVBoxLayout()
 
         index_selector = IndexWidget(self.dataset)
-        index_selector.on_change.connect(self.dataset.on_request_card_index)
+        index_selector.on_change.connect(self.dataset.next)
         left_layout.addWidget(index_selector)
 
         card_viewer = CardViewer()
@@ -82,8 +36,8 @@ class App(QMainWindow):
         right_layout.addWidget(shapeEditor)
         card_viewer.nextShapeHandler.connect(shapeEditor.setShape)
 
-        self.dataset.new_card.connect(index_selector.update_card_index)
-        self.dataset.new_card.connect(card_viewer.on_set_card)
+        self.dataset.item.connect(index_selector.update_card_index)
+        self.dataset.item.connect(card_viewer.on_set_card)
 
         root = QWidget()
         layout = QHBoxLayout(root)
@@ -103,8 +57,8 @@ class App(QMainWindow):
         self.adjustSize()
         # self.showMaximized()
 
-        # set the first line of the first card
-        self.dataset.on_request_next_card()
+        # # set the first line of the first card
+        self.dataset.itemAt(0)
 
         ##################
         # Init Menubar
@@ -124,10 +78,10 @@ class App(QMainWindow):
 
         nextImageAction = QAction('&Next Image', self)
         nextImageAction.setShortcut(Qt.Key_PageDown)
-        nextImageAction.triggered.connect(self.dataset.on_request_next_card)
+        nextImageAction.triggered.connect(self.dataset.next)
         prevImageAction = QAction('&Previous Image', self)
         prevImageAction.setShortcut(Qt.Key_PageUp)
-        prevImageAction.triggered.connect(self.dataset.on_request_prev_card)
+        prevImageAction.triggered.connect(self.dataset.prev)
         nextShapeAction = QAction('&Next Shape', self)
         nextShapeAction.setShortcut(Qt.Key_Down)
         nextShapeAction.triggered.connect(card_viewer.on_next_textline)

@@ -18,16 +18,17 @@ class ImageView(QGraphicsView):
         self.zoomSpeed = 0.1
         self.isMoving = False
 
-        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.horizontalScrollBar().disconnect()
-        self.verticalScrollBar().disconnect()
+        # self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        # self.horizontalScrollBar().disconnect()
+        # self.verticalScrollBar().disconnect()
 
         # Set Anchors
-        self.setTransformationAnchor(QGraphicsView.NoAnchor)
-        self.setResizeAnchor(QGraphicsView.NoAnchor)
+        # self.setTransformationAnchor(QGraphicsView.NoAnchor)
+        # self.setResizeAnchor(QGraphicsView.NoAnchor)
 
         self.highlighted_polygon = None
+        self.prevPos: Optional[QPoint] = None
 
     def wheelEvent(self, event: QWheelEvent):
         modifier = event.modifiers()
@@ -45,21 +46,32 @@ class ImageView(QGraphicsView):
 
             # Get the new position
             newPos = self.mapToScene(event.pos())
+            print('NewPos', newPos)
 
             # Move scene to old position
             delta = newPos - oldPos
             self.translate(delta.x(), delta.y())
 
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            print('Press!!')
+            self.prevPos = self.mapToScene(event.pos())
+            # self.prevPos = event.pos()
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            print('Release')
+            self.prevPos = None
+
     def mouseMoveEvent(self, event: QMouseEvent):
-        self.__startPos: Optional[QPoint]
-        if event.buttons() == Qt.LeftButton:
-            if self.__startPos is not None:
-                newPos = self.mapToScene(event.pos())
-                delta = newPos - self.__startPos
-                self.translate(delta.x(), delta.y())
-            self.__startPos = self.mapToScene(event.pos())
-        else:
-            self.__startPos = None
+        if self.prevPos is not None:
+            print('Move')
+            newPos = self.mapToScene(event.pos())
+            # newPos = event.pos()
+            delta = newPos - self.prevPos
+            print('Translate', delta)
+            self.translate(delta.x(), delta.y())
+            self.prevPos = newPos
 
     @pyqtSlot(object)
     def setImage(self, pillowImage):
