@@ -1,6 +1,6 @@
 from data import Annotation, Shape
 from PyQt5.QtCore import QPoint, QPointF, QRectF, Qt, pyqtSlot, pyqtSignal
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsPolygonItem, QGraphicsScene, QGraphicsView, QWidget, QVBoxLayout
 from PyQt5.QtGui import QBrush, QColor, QPen, QPixmap, QPolygonF, QWheelEvent
 from PIL import Image
 from PIL.ImageQt import ImageQt
@@ -77,7 +77,7 @@ class AnnotationViewer(QWidget):
 class _Viewer(QGraphicsView):
     def __init__(self):
         super().__init__()
-        self.setScene(QGraphicsScene(0, 0, 800, 600))
+        self.setScene(QGraphicsScene(0, 0, 4000, 3000))
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
@@ -145,12 +145,12 @@ class _Viewer(QGraphicsView):
         self.currentShape = item
         self.currentShape.setParentItem(self.pixmap)
 
+        self.fitInView(self.currentShape, Qt.KeepAspectRatio)
+        self.ensureVisible(self.currentShape, -50, -50)
+
     def wheelEvent(self, event: QWheelEvent):
         modifier = event.modifiers()
         if modifier == self.modifier:
-            # Save the scene pos
-            oldPos = self.mapToScene(event.pos())
-
             # Zoom
             if event.angleDelta().y() > 0:
                 zoomFactor = 1 + self.zoomSpeed
@@ -159,9 +159,7 @@ class _Viewer(QGraphicsView):
 
             self.scale(zoomFactor, zoomFactor)
 
-            # Get the new position
-            newPos = self.mapToScene(event.pos())
-
-            # Move scene to old position
-            delta = newPos - oldPos
-            self.translate(delta.x(), delta.y())
+    def resizeEvent(self, event):
+        self.fitInView(self.currentShape, Qt.KeepAspectRatio)
+        self.ensureVisible(self.currentShape, -50, -50)
+        super(_Viewer, self).resizeEvent(event)

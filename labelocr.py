@@ -27,6 +27,8 @@ class LabelOCR(QWidget):
         right_layout = QVBoxLayout()
 
         shapeEditor = ShapeEditor()
+        shapeEditor.setMinimumWidth(600)
+        shapeEditor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         right_layout.addWidget(shapeEditor)
         annotationViewer.shape.connect(shapeEditor.setShape)
 
