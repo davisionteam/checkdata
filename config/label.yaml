@@ -1,0 +1,12 @@
+supported_cards:
+  - 'CCCD_BACK'
+  - 'CCCD'
+  - 'BLX'
+  - 'BLX_BACK'
+  - 'CMND'
+  - 'CMND_BACK'
+  - 'CMCC'
+  - 'RECEIPT'
+  - 'VTP'
+
+labels:
