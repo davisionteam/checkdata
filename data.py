@@ -34,13 +34,13 @@ class Dataset(QObject):
 
     @pyqtSlot()
     def next(self):
-        if self.currentIdx + 1 < len(self):
-            self.itemAt(self.currentIdx + 1)
+        self.currentIdx = min(self.currentIdx + 1, len(self) - 1)
+        self.itemAt(self.currentIdx)
 
     @pyqtSlot()
     def prev(self):
-        if self.currentIdx - 1 >= 0:
-            self.itemAt(self.currentIdx - 1)
+        self.currentIdx = max(self.currentIdx - 1, 0)
+        self.itemAt(self.currentIdx)
 
 
 class Shape():

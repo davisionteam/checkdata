@@ -30,17 +30,8 @@ class AnnotationViewer(QWidget):
 
         assert len(annotation) > 0, "Annotation must have at least 1 shape"
         self.annotation = annotation
-        self.shape.emit(self.annotation[0])
         self.shapes = self.annotation.shapes
-
         self.viewer.setImage(self.fullImage)
-        print(jsonPath, len(self.shapes))
-        if len(self.shapes) == 0:
-            print(f'Nothing to do with {imagePath}')
-            self.next_card_signal.emit()
-            return
-
-        self.adjustSize()
         self.setShape(self.annotation[0])
 
     @pyqtSlot(object)
@@ -77,21 +68,23 @@ class AnnotationViewer(QWidget):
 class _Viewer(QGraphicsView):
     def __init__(self):
         super().__init__()
-        self.setScene(QGraphicsScene(0, 0, 4000, 3000))
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
 
+        self.pixmap = None
         self.modifier = Qt.NoModifier
         self.zoomSpeed = 0.1
-        self.prevPos: Optional[QPoint] = None
-
-        self.highlighted_polygon = None
-        self.currentShape: Optional[QGraphicsItem] = None
 
     def setImage(self, pilImage):
         self.imageQt = ImageQt(pilImage)
-        self.scene().clear()
-        self.currentShape = None
+        if self.pixmap is not None:
+            self.scene().removeItem(self.pixmap)
+
+        self.prevPos: Optional[QPoint] = None
+        self.highlighted_polygon = None
+        self.currentShape: Optional[QGraphicsItem] = None
+
+        self.setScene(QGraphicsScene(0, 0, 4000, 3000))
         self.pixmap = self.scene().addPixmap(QPixmap.fromImage(self.imageQt))
         self.pixmap.setFlag(QGraphicsItem.ItemIsMovable, True)
 
@@ -158,6 +151,11 @@ class _Viewer(QGraphicsView):
                 zoomFactor = 1 - self.zoomSpeed
 
             self.scale(zoomFactor, zoomFactor)
+
+    def showEvent(self, event):
+        self.fitInView(self.currentShape, Qt.KeepAspectRatio)
+        self.ensureVisible(self.currentShape, -50, -50)
+        super(_Viewer, self).showEvent(event)
 
     def resizeEvent(self, event):
         self.fitInView(self.currentShape, Qt.KeepAspectRatio)
