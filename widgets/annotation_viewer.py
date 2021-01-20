@@ -137,9 +137,7 @@ class _Viewer(QGraphicsView):
             self.scene().removeItem(self.currentShape)
         self.currentShape = item
         self.currentShape.setParentItem(self.pixmap)
-
-        self.fitInView(self.currentShape, Qt.KeepAspectRatio)
-        self.ensureVisible(self.currentShape, -50, -50)
+        self.fitCurrentShape()
 
     def wheelEvent(self, event: QWheelEvent):
         modifier = event.modifiers()
@@ -153,11 +151,20 @@ class _Viewer(QGraphicsView):
             self.scale(zoomFactor, zoomFactor)
 
     def showEvent(self, event):
-        self.fitInView(self.currentShape, Qt.KeepAspectRatio)
-        self.ensureVisible(self.currentShape, -50, -50)
+        self.fitCurrentShape()
         super(_Viewer, self).showEvent(event)
 
     def resizeEvent(self, event):
-        self.fitInView(self.currentShape, Qt.KeepAspectRatio)
-        self.ensureVisible(self.currentShape, -50, -50)
+        self.fitCurrentShape()
         super(_Viewer, self).resizeEvent(event)
+
+    def fitCurrentShape(self):
+        margin = 100
+        boundingRect = self.currentShape.boundingRect()
+        viewRect = QRectF(boundingRect)
+        viewRect.setX(viewRect.x() - margin)
+        viewRect.setY(viewRect.y() - margin)
+        viewRect.setWidth(viewRect.width() + 2 * margin)
+        viewRect.setHeight(viewRect.height() + 2 * margin)
+        self.fitInView(viewRect, Qt.KeepAspectRatio)
+        self.ensureVisible(viewRect, -margin, -margin)
