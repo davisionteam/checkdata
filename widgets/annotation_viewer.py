@@ -1,7 +1,7 @@
 from data import Annotation, Shape
 from PyQt5.QtCore import QPoint, QPointF, QRectF, Qt, pyqtSlot, pyqtSignal
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView, QWidget, QVBoxLayout
-from PyQt5.QtGui import QColor, QPen, QPixmap, QPolygonF, QWheelEvent
+from PyQt5.QtGui import QBrush, QColor, QPen, QPixmap, QPolygonF, QWheelEvent
 from PIL import Image
 from PIL.ImageQt import ImageQt
 from typing import List, Optional
@@ -97,21 +97,46 @@ class _Viewer(QGraphicsView):
 
     def addPolygon(self, points):
         polygon = list(map(lambda p: QPointF(p[0], p[1]), points))
+        dots = polygon
         polygon = QPolygonF(polygon)
-        polygon = self.scene().addPolygon(polygon, QColor(255, 0, 0, 200), QColor(255, 0, 0, 100))
+        pen = QPen(QColor(255, 0, 0, 200))
+        pen.setWidth(10)
+        pen.setJoinStyle(Qt.MiterJoin)
+        brush = QBrush(QColor(255, 0, 0, 100))
+        polygon = self.scene().addPolygon(polygon, pen=pen, brush=brush)
+
+        pen.setColor(QColor(0, 255, 0, 255))
+        radius = 5
+        for dot in dots:
+            x, y = dot.x() - radius, dot.y() - radius
+            w, h = 2 * radius, 2 * radius
+            ellipse = self.scene().addEllipse(x, y, w, h, pen, brush)
+            ellipse.setParentItem(polygon)
+
         self._keepOne(polygon)
 
     def addLine(self, points):
         pen = QPen(QColor(255, 0, 0, 200))
         pen.setWidth(10)
         item = self.scene().addLine(points[0][0], points[0][1], points[1][0], points[1][1], pen)
+
+        pen.setColor(QColor(0, 255, 0, 255))
+        brush = QBrush(QColor(255, 0, 0, 100))
+        radius = 10
+        for point in points:
+            x, y = point[0] - radius, point[1] - radius
+            w, h = 2 * radius, 2 * radius
+            ellipse = self.scene().addEllipse(x, y, w, h, pen, brush)
+            ellipse.setParentItem(item)
+
         self._keepOne(item)
 
     def addRectangle(self, points):
         rect = QRectF(QPointF(points[0][0], points[0][1]), QPointF(points[1][0], points[1][1]))
         pen = QPen(QColor(255, 0, 0, 200))
         pen.setWidth(10)
-        item = self.scene().addRect(rect, pen)
+        brush = QBrush(QColor(255, 0, 0, 100))
+        item = self.scene().addRect(rect, pen, brush)
         self._keepOne(item)
 
     def _keepOne(self, item: QGraphicsItem):
