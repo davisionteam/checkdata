@@ -22,6 +22,6 @@ class App(QMainWindow):
 if __name__ == "__main__":
     app = QApplication([])
     window = App(Path(sys.argv[1]), Path(sys.argv[2]))
-    window.show()
+    window.showMaximized()
     # window.fixedText.setFocus()
     app.exec_()
