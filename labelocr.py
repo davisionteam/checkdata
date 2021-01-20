@@ -15,7 +15,7 @@ class LabelOCR(QWidget):
         left_layout = QVBoxLayout()
 
         index_selector = IndexWidget(self.dataset)
-        # index_selector.on_change.connect(self.dataset.next)
+        index_selector.on_change.connect(self.dataset.itemAt)
         self.dataset.indexChanged.connect(index_selector.updateIndex)
         left_layout.addWidget(index_selector)
 
