@@ -4,8 +4,10 @@ from PyQt5.QtCore import (QObject, pyqtSignal, pyqtSlot)
 import json
 import re
 
+
 class Dataset(QObject):
     item = pyqtSignal(str, str)
+    indexChanged = pyqtSignal(int)
 
     def __init__(self, acc_dir: Path):
         super().__init__()
@@ -15,7 +17,7 @@ class Dataset(QObject):
 
         self.imagePaths: List[Path] = sum([sorted(list(acc_dir.glob(pattern))) for pattern in extList], [])
         self.jsonPaths = [image.with_suffix('.json') for image in self.imagePaths]
-        self.currentIdx = 0
+        self.currentIdx = -1
 
     def __getitem__(self, idx):
         imagePath = self.imagePaths[idx]
@@ -28,19 +30,19 @@ class Dataset(QObject):
     @pyqtSlot(int)
     def itemAt(self, index: int):
         if 0 <= index < len(self):
-            self.currentIdx = index
-            imagePath, jsonPath = self[index]
-            self.item.emit(imagePath, jsonPath)
+            if index != self.currentIdx:
+                self.currentIdx = index
+                imagePath, jsonPath = self[index]
+                self.item.emit(imagePath, jsonPath)
+                self.indexChanged.emit(self.currentIdx)
 
     @pyqtSlot()
     def next(self):
-        self.currentIdx = min(self.currentIdx + 1, len(self) - 1)
-        self.itemAt(self.currentIdx)
+        self.itemAt(self.currentIdx + 1)
 
     @pyqtSlot()
     def prev(self):
-        self.currentIdx = max(self.currentIdx - 1, 0)
-        self.itemAt(self.currentIdx)
+        self.itemAt(self.currentIdx - 1)
 
 
 class Shape():

@@ -46,8 +46,8 @@ class IndexWidget(QWidget):
             text = '0'
         self.on_change.emit(int(text))
 
-    @pyqtSlot()
-    def update_card_index(self):
+    @pyqtSlot(int)
+    def updateIndex(self, index):
         index = self.dataset.currentIdx
         self.index_line_edit.setText(f'{index:05d}')
         image_path, *_ = self.dataset[index]
