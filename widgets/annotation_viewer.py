@@ -1,10 +1,10 @@
-from data import Annotation, Shape
-from PyQt5.QtCore import QPoint, QPointF, QRectF, Qt, pyqtSlot, pyqtSignal
-from PyQt5.QtWidgets import QGraphicsItem, QGraphicsLineItem, QGraphicsPolygonItem, QGraphicsScene, QGraphicsView, QWidget, QVBoxLayout
-from PyQt5.QtGui import QBrush, QColor, QPen, QPixmap, QPolygonF, QWheelEvent
+from data import Annotation, Point, Shape
+from PyQt5.QtCore import QLineF, QObject, QPoint, QPointF, QRectF, Qt, pyqtSlot, pyqtSignal
+from PyQt5.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QGraphicsLineItem, QGraphicsPolygonItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QWidget, QVBoxLayout
+from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPen, QPixmap, QPolygonF, QWheelEvent
 from PIL import Image
 from PIL.ImageQt import ImageQt
-from typing import List, Optional
+from typing import Any, List, Optional
 
 
 class AnnotationViewer(QWidget):
@@ -89,54 +89,21 @@ class _Viewer(QGraphicsView):
         self.pixmap.setFlag(QGraphicsItem.ItemIsMovable, True)
 
     def addPolygon(self, points):
-        polygon = list(map(lambda p: QPointF(p[0], p[1]), points))
-        dots = polygon
-        polygon = QPolygonF(polygon)
-        pen = QPen(QColor(255, 0, 0, 200))
-        pen.setWidth(10)
-        pen.setJoinStyle(Qt.MiterJoin)
-        brush = QBrush(QColor(255, 0, 0, 100))
-        polygon = self.scene().addPolygon(polygon, pen=pen, brush=brush)
-
-        pen.setColor(QColor(0, 255, 0, 255))
-        radius = 5
-        for dot in dots:
-            x, y = dot.x() - radius, dot.y() - radius
-            w, h = 2 * radius, 2 * radius
-            ellipse = self.scene().addEllipse(x, y, w, h, pen, brush)
-            ellipse.setParentItem(polygon)
-
+        polygon = PolygonShape(points, self.pixmap)
         self._keepOne(polygon)
 
     def addLine(self, points):
-        pen = QPen(QColor(255, 0, 0, 200))
-        pen.setWidth(10)
-        item = self.scene().addLine(points[0][0], points[0][1], points[1][0], points[1][1], pen)
-
-        pen.setColor(QColor(0, 255, 0, 255))
-        brush = QBrush(QColor(255, 0, 0, 100))
-        radius = 10
-        for point in points:
-            x, y = point[0] - radius, point[1] - radius
-            w, h = 2 * radius, 2 * radius
-            ellipse = self.scene().addEllipse(x, y, w, h, pen, brush)
-            ellipse.setParentItem(item)
-
-        self._keepOne(item)
+        line = LineShape(points, self.pixmap)
+        self._keepOne(line)
 
     def addRectangle(self, points):
-        rect = QRectF(QPointF(points[0][0], points[0][1]), QPointF(points[1][0], points[1][1]))
-        pen = QPen(QColor(255, 0, 0, 200))
-        pen.setWidth(10)
-        brush = QBrush(QColor(255, 0, 0, 100))
-        item = self.scene().addRect(rect, pen, brush)
-        self._keepOne(item)
+        rect = RectangleShape(points, self.pixmap)
+        self._keepOne(rect)
 
     def _keepOne(self, item: QGraphicsItem):
         if self.currentShape is not None:
             self.scene().removeItem(self.currentShape)
         self.currentShape = item
-        self.currentShape.setParentItem(self.pixmap)
         self.fitCurrentShape()
 
     def wheelEvent(self, event: QWheelEvent):
@@ -168,3 +135,95 @@ class _Viewer(QGraphicsView):
         viewRect.setHeight(viewRect.height() + 2 * margin)
         self.fitInView(viewRect, Qt.KeepAspectRatio)
         self.ensureVisible(viewRect, -margin, -margin)
+
+
+class PointShape(QGraphicsEllipseItem):
+
+    def __init__(self, point: Point, radius, parent=None, callback=None):
+        x, y = point.x - radius, point.y - radius
+        w, h = 2 * radius, 2 * radius
+        super(PointShape, self).__init__(x, y, w, h, parent)
+
+        self.point = point
+        self.originalPoint = Point([point.x, point.y])
+        self.radius = radius
+
+        color = QColor(0, 255, 0, 255)
+        pen = QPen(color)
+        pen.setWidth(10)
+        self.setPen(pen)
+
+        brush = QBrush(color)
+        self.setBrush(brush)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
+        self.callback = callback
+
+    def itemChange(self, change: 'QGraphicsItem.GraphicsItemChange', value: Any) -> Any:
+        if (change == QGraphicsItem.ItemPositionChange):
+            self.point.x = self.originalPoint.x + value.x()
+            self.point.y = self.originalPoint.y + value.y()
+            if self.callback is not None:
+                self.callback()
+        return super().itemChange(change, value)
+
+
+class PolygonShape(QGraphicsPolygonItem):
+    def __init__(self, points, parent=None):
+        super(PolygonShape, self).__init__(self._makePolygon(points), parent)
+        self.points = points
+        pen = QPen(QColor(255, 0, 0, 200))
+        pen.setWidth(10)
+        brush = QBrush(QColor(255, 0, 0, 100))
+        self.setPen(pen)
+        self.setBrush(brush)
+
+        for point in points:
+            point = PointShape(point, 10, self, self.onPointChange)
+            point.setFlag(QGraphicsItem.ItemIsMovable, True)
+
+    def _makePolygon(self, points: List[Point]):
+        return QPolygonF(list(map(lambda p: QPointF(p.x, p.y), points)))
+
+    def onPointChange(self):
+        self.setPolygon(self._makePolygon(self.points))
+
+
+class LineShape(QGraphicsLineItem):
+    def __init__(self, points, parent=None):
+        self.points = points
+        super(LineShape, self).__init__(self._makeLine(self.points), parent)
+        pen = QPen(QColor(255, 0, 0, 200))
+        pen.setWidth(10)
+        self.setPen(pen)
+
+        for point in points:
+            point = PointShape(point, 10, self, self.onPointChange)
+            point.setFlag(QGraphicsItem.ItemIsMovable, True)
+
+    def _makeLine(self, points):
+        return QLineF(points[0].x, points[0].y, points[1].x, points[1].y)
+
+    def onPointChange(self):
+        self.setLine(self._makeLine(self.points))
+
+
+class RectangleShape(QGraphicsRectItem):
+    def __init__(self, points, parent=None):
+        self.points = points
+        super(RectangleShape, self).__init__(self._makeRect(self.points), parent)
+        pen = QPen(QColor(255, 0, 0, 200))
+        pen.setWidth(10)
+        self.setPen(pen)
+        brush = QBrush(QColor(255, 0, 0, 100))
+        self.setBrush(brush)
+
+        for point in points:
+            point = PointShape(point, 10, self, self.onPointChange)
+            point.setFlag(QGraphicsItem.ItemIsMovable, True)
+
+    def _makeRect(self, points):
+        rect = QRectF(QPointF(points[0].x, points[0].y), QPointF(points[1].x, points[1].y))
+        return rect
+
+    def onPointChange(self):
+        self.setRect(self._makeRect(self.points))

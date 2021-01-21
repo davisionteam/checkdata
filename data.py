@@ -45,10 +45,15 @@ class Dataset(QObject):
         self.itemAt(self.currentIdx - 1)
 
 
+class Point():
+    def __init__(self, point):
+        self.x, self.y = point
+
+
 class Shape():
     def __init__(self, shape):
         self.label = shape['label']
-        self.points = shape['points']
+        self.points = list(map(Point, shape['points']))
         self.type = shape['shape_type']
         self.group_id = shape['group_id']
         self.flags = shape['flags']
@@ -162,7 +167,7 @@ def labelme_serializer(obj):
     if isinstance(obj, Shape):
         d = {
             'label': obj.label,
-            'points': obj.points,
+            'points': [[p.x, p.y] for p in obj.points],
             "group_id": obj.group_id,
             "shape_type": obj.type,
             "flags": obj.flags,
