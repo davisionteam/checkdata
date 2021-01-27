@@ -74,8 +74,8 @@ class AnnotationViewer(QWidget):
 class _Viewer(QGraphicsView):
     def __init__(self):
         super().__init__()
-        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-        self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setDragMode(QGraphicsView.ScrollHandDrag)
+        self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
 
         self.pixmap = None
         self.modifier = Qt.NoModifier
