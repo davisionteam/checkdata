@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 from PyQt5.QtWidgets import QApplication, QMainWindow
-
+from argparse import ArgumentParser
 from labelocr import LabelOCR
 import yaml
 WIN_SIZE = (1024, 128)
@@ -20,7 +20,12 @@ class App(QMainWindow):
 
 
 if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument('config_path', type=Path, help='Configuration file')
+    parser.add_argument('label_dir', type=Path, help='Directory containing the JSON annotation files')
+    args = parser.parse_args()
+
     app = QApplication([])
-    window = App(Path(sys.argv[1]), Path(sys.argv[2]))
+    window = App(args.config_path, args.label_dir)
     window.showMaximized()
     app.exec_()
