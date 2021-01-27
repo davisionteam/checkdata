@@ -1,6 +1,7 @@
 from typing import Dict
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QAction, QSizePolicy, QToolBar, QWidget, QGridLayout
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction, QSizePolicy, QToolBar, QToolButton, QWidget, QGridLayout
 from data import Dataset
 from widgets.shape_editor import ShapeEditor
 from widgets.annotation_viewer import AnnotationViewer
@@ -49,20 +50,43 @@ class LabelOCR(QWidget):
         # zoomOutAction.triggered.connect(annotationViewer.imageViewer.zoomOutImage)
         # zoomOutAction.triggered.connect(shapeEditor.imageField.image.zoomOutImage)
 
-        nextImageAction = QAction('&Next Image', self)
+        nextImageAction = QAction(QIcon('resources/skip_next-black-18dp/2x/baseline_skip_next_black_18dp.png'), 'Next Image')
         nextImageAction.setShortcut(Qt.Key_PageDown)
+        nextImageAction.setToolTip(nextImageAction.shortcut().toString())
         nextImageAction.triggered.connect(self.dataset.next)
-        prevImageAction = QAction('&Previous Image', self)
-        prevImageAction.setShortcut(Qt.Key_PageUp)
-        prevImageAction.triggered.connect(self.dataset.prev)
-        nextShapeAction = QAction('&Next Shape', self)
-        nextShapeAction.setShortcut(Qt.Key_Down)
-        nextShapeAction.triggered.connect(annotationViewer.next)
-        prevShapeAction = QAction('&Previous Shape', self)
-        prevShapeAction.setShortcut(Qt.Key_Up)
-        prevShapeAction.triggered.connect(annotationViewer.prev)
+        nextImageButton = QToolButton()
+        nextImageButton.setDefaultAction(nextImageAction)
+        nextImageButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        toolbar.addWidget(nextImageButton)
 
-        toolbar.addActions([nextImageAction, prevImageAction, nextShapeAction, prevShapeAction])
+        prevImageAction = QAction(QIcon('resources/skip_previous-black-18dp/2x/baseline_skip_previous_black_18dp.png'), 'Prev Image')
+        prevImageAction.setShortcut(Qt.Key_PageUp)
+        prevImageAction.setToolTip(prevImageAction.shortcut().toString())
+        prevImageAction.triggered.connect(self.dataset.prev)
+        prevImageButton = QToolButton()
+        prevImageButton.setDefaultAction(prevImageAction)
+        prevImageButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        toolbar.addWidget(prevImageButton)
+
+        toolbar.addSeparator()
+
+        prevShapeAction = QAction(QIcon('resources/fast_rewind-black-18dp/2x/baseline_fast_rewind_black_18dp.png'), 'Prev Shape')
+        prevShapeAction.setShortcut(Qt.Key_Up)
+        prevShapeAction.setToolTip(prevShapeAction.shortcut().toString())
+        prevShapeAction.triggered.connect(annotationViewer.prev)
+        prevShapeButton = QToolButton()
+        prevShapeButton.setDefaultAction(prevShapeAction)
+        prevShapeButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        toolbar.addWidget(prevShapeButton)
+
+        nextShapeAction = QAction(QIcon('resources/fast_forward-black-18dp/2x/baseline_fast_forward_black_18dp.png'), 'Next Shape')
+        nextShapeAction.setShortcut(Qt.Key_Down)
+        nextShapeAction.setToolTip(nextShapeAction.shortcut().toString())
+        nextShapeAction.triggered.connect(annotationViewer.next)
+        nextShapeButton = QToolButton()
+        nextShapeButton.setDefaultAction(nextShapeAction)
+        nextShapeButton.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        toolbar.addWidget(nextShapeButton)
 
         layout = QGridLayout(self)
         layout.addWidget(toolbar, 0, 0, 2, 1)

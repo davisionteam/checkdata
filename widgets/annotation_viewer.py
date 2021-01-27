@@ -1,10 +1,16 @@
+from typing import Any, List, Optional
+
 from data import Annotation, Point, Shape
-from PyQt5.QtCore import QLineF, QObject, QPoint, QPointF, QRectF, Qt, pyqtSlot, pyqtSignal
-from PyQt5.QtWidgets import QGraphicsEllipseItem, QGraphicsItem, QGraphicsLineItem, QGraphicsPolygonItem, QGraphicsRectItem, QGraphicsScene, QGraphicsView, QWidget, QVBoxLayout
-from PyQt5.QtGui import QBrush, QColor, QMouseEvent, QPen, QPixmap, QPolygonF, QWheelEvent
 from PIL import Image
 from PIL.ImageQt import ImageQt
-from typing import Any, List, Optional
+from PyQt5.QtCore import (QLineF, QPoint, QPointF, QRectF, Qt,
+                          pyqtSignal, pyqtSlot)
+from PyQt5.QtGui import (QBrush, QColor, QPen, QPixmap, QPolygonF,
+                         QWheelEvent)
+from PyQt5.QtWidgets import (QGraphicsEllipseItem, QGraphicsItem,
+                             QGraphicsLineItem, QGraphicsPolygonItem,
+                             QGraphicsRectItem, QGraphicsScene, QGraphicsView,
+                             QVBoxLayout, QWidget)
 
 
 class AnnotationViewer(QWidget):
