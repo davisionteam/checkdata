@@ -80,6 +80,8 @@ class _Viewer(QGraphicsView):
         self.pixmap = None
         self.modifier = Qt.NoModifier
         self.zoomSpeed = 0.1
+        self.pointSize = 3
+        self.lineSize = 3
 
     def setImage(self, pilImage):
         self.imageQt = ImageQt(pilImage)
@@ -95,15 +97,15 @@ class _Viewer(QGraphicsView):
         self.pixmap.setFlag(QGraphicsItem.ItemIsMovable, True)
 
     def addPolygon(self, points):
-        polygon = PolygonShape(points, self.pixmap)
+        polygon = PolygonShape(points, self.pixmap, self.pointSize, self.lineSize)
         self._keepOne(polygon)
 
     def addLine(self, points):
-        line = LineShape(points, self.pixmap)
+        line = LineShape(points, self.pixmap, self.pointSize, self.lineSize)
         self._keepOne(line)
 
     def addRectangle(self, points):
-        rect = RectangleShape(points, self.pixmap)
+        rect = RectangleShape(points, self.pixmap, self.pointSize, self.lineSize)
         self._keepOne(rect)
 
     def _keepOne(self, item: QGraphicsItem):
@@ -156,7 +158,7 @@ class PointShape(QGraphicsEllipseItem):
 
         color = QColor(0, 255, 0, 255)
         pen = QPen(color)
-        pen.setWidth(10)
+        pen.setWidth(radius)
         self.setPen(pen)
 
         brush = QBrush(color)
@@ -174,17 +176,17 @@ class PointShape(QGraphicsEllipseItem):
 
 
 class PolygonShape(QGraphicsPolygonItem):
-    def __init__(self, points, parent=None):
+    def __init__(self, points, parent=None, point_size=3, line_size=3):
         super(PolygonShape, self).__init__(self._makePolygon(points), parent)
         self.points = points
         pen = QPen(QColor(255, 0, 0, 200))
-        pen.setWidth(10)
+        pen.setWidth(line_size)
         brush = QBrush(QColor(255, 0, 0, 100))
         self.setPen(pen)
         self.setBrush(brush)
 
         for point in points:
-            point = PointShape(point, 10, self, self.onPointChange)
+            point = PointShape(point, point_size, self, self.onPointChange)
             point.setFlag(QGraphicsItem.ItemIsMovable, True)
 
     def _makePolygon(self, points: List[Point]):
@@ -195,15 +197,15 @@ class PolygonShape(QGraphicsPolygonItem):
 
 
 class LineShape(QGraphicsLineItem):
-    def __init__(self, points, parent=None):
+    def __init__(self, points, parent=None, point_size=3, line_size=3):
         self.points = points
         super(LineShape, self).__init__(self._makeLine(self.points), parent)
         pen = QPen(QColor(255, 0, 0, 200))
-        pen.setWidth(10)
+        pen.setWidth(line_size)
         self.setPen(pen)
 
         for point in points:
-            point = PointShape(point, 10, self, self.onPointChange)
+            point = PointShape(point, point_size, self, self.onPointChange)
             point.setFlag(QGraphicsItem.ItemIsMovable, True)
 
     def _makeLine(self, points):
@@ -214,17 +216,17 @@ class LineShape(QGraphicsLineItem):
 
 
 class RectangleShape(QGraphicsRectItem):
-    def __init__(self, points, parent=None):
+    def __init__(self, points, parent=None, point_size=3, line_size=3):
         self.points = points
         super(RectangleShape, self).__init__(self._makeRect(self.points), parent)
         pen = QPen(QColor(255, 0, 0, 200))
-        pen.setWidth(10)
+        pen.setWidth(line_size)
         self.setPen(pen)
         brush = QBrush(QColor(255, 0, 0, 100))
         self.setBrush(brush)
 
         for point in points:
-            point = PointShape(point, 10, self, self.onPointChange)
+            point = PointShape(point, point_size, self, self.onPointChange)
             point.setFlag(QGraphicsItem.ItemIsMovable, True)
 
     def _makeRect(self, points):
