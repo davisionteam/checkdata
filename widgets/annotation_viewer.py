@@ -96,6 +96,9 @@ class _Viewer(QGraphicsView):
         self.pixmap = self.scene().addPixmap(QPixmap.fromImage(self.imageQt))
         self.pixmap.setFlag(QGraphicsItem.ItemIsMovable, True)
 
+        self.lineSize = int(round(pilImage.size[1] / 4000 * 10))
+        self.pointSize = self.lineSize
+
     def addPolygon(self, points):
         polygon = PolygonShape(points, self.pixmap, self.pointSize, self.lineSize)
         self._keepOne(polygon)
