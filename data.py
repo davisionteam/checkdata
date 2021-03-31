@@ -55,8 +55,8 @@ class Shape():
         self.label = shape['label']
         self.points = list(map(Point, shape['points']))
         self.type = shape['shape_type']
-        self.group_id = shape['group_id']
-        self.flags = shape['flags']
+        self.group_id = shape.get('group_id', None)
+        self.flags = shape.get('flags', None)
         self.value = shape.get('value', None)
 
     def __repr__(self) -> str:
@@ -168,10 +168,15 @@ def labelme_serializer(obj):
         d = {
             'label': obj.label,
             'points': [[p.x, p.y] for p in obj.points],
-            "group_id": obj.group_id,
             "shape_type": obj.type,
-            "flags": obj.flags,
         }
+
+        if obj.group_id is not None:
+            d["group_id"] = obj.group_id
+
+        if obj.flags is not None:
+            d['flags'] = obj.flags
+
         if obj.value is not None:
             d['value'] = obj.value
         return d
